@@ -6,21 +6,21 @@
         </div>
         <div class="race-details">
             <div class="detail">
-                <span class="label">Location:</span>
+                <span class="label">{{ $t('race_card.location_label') }}</span>
                 <span class="value">{{ race.location }}</span>
             </div>
             <div class="detail">
-                <span class="label">Date:</span>
+                <span class="label">{{ $t('race_card.date_label') }}</span>
                 <span class="value">{{ formattedDate }}</span>
             </div>
             <div class="detail">
-                <span class="label">Distance:</span>
-                <span class="value">{{ race.distance }} km</span>
+                <span class="label">{{ $t('race_card.distance_label') }}</span>
+                <span class="value">{{ race.distance }} {{ $t('race_card.km_suffix') }}</span>
             </div>
         </div>
         <div v-if="race.status === 'ongoing'" class="live-indicator">
             <span class="pulse"></span>
-            Live Now
+            {{ $t('race_card.live_now') }}
         </div>
     </div>
 </template>
@@ -29,38 +29,41 @@
 import { computed } from 'vue';
 import type { Race } from '../types';
 import { formatDate, getRaceStatusLabel } from '../utils/date';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
     race: Race;
 }>();
+
+const { t } = useI18n();
 
 defineEmits<{
     (e: 'click', id: string): void;
 }>();
 
 const formattedDate = computed(() => formatDate(props.race.startDate));
-const statusLabel = computed(() => getRaceStatusLabel(props.race.status));
+const statusLabel = computed(() => getRaceStatusLabel(props.race.status, t));
 const statusClass = computed(() => `status-${props.race.status}`);
 </script>
 
 <style scoped>
 .race-card {
-    background: white;
+    background: var(--bg-secondary);
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--shadow);
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .race-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px var(--shadow-heavy);
 }
 
 /* Past race styling - grayed out */
 .race-card--past {
-    background: #f5f5f5;
+    background: var(--bg-primary);
     opacity: 0.85;
 }
 
@@ -87,7 +90,7 @@ const statusClass = computed(() => `status-${props.race.status}`);
 .race-header h3 {
     margin: 0;
     font-size: 1.25rem;
-    color: #2c3e50;
+    color: var(--text-primary);
 }
 
 .race-status {
@@ -125,12 +128,12 @@ const statusClass = computed(() => `status-${props.race.status}`);
 
 .label {
     font-weight: 600;
-    color: #7f8c8d;
+    color: var(--text-secondary);
     min-width: 80px;
 }
 
 .value {
-    color: #2c3e50;
+    color: var(--text-primary);
 }
 
 .live-indicator {

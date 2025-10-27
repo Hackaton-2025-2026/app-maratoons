@@ -34,11 +34,17 @@ export function isRaceFuture(race: { startDate: string; status: string }): boole
     return race.status === 'future';
 }
 
-export function getRaceStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-        past: 'Finished',
-        future: 'Upcoming',
-        ongoing: 'Live',
-    };
-    return labels[status] || status;
+import type { TFunction } from 'vue-i18n'; // Import TFunction type
+
+export function getRaceStatusLabel(status: string, t: TFunction): string {
+    switch (status) {
+        case 'past':
+            return t('race_status.past');
+        case 'future':
+            return t('race_status.future');
+        case 'ongoing':
+            return t('race_status.ongoing');
+        default:
+            return status;
+    }
 }

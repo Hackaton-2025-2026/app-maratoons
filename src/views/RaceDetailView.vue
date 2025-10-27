@@ -1,11 +1,11 @@
 <template>
     <div class="race-detail-view">
-        <div v-if="loading" class="loading">Loading race details...</div>
-        <div v-else-if="error" class="error">{{ error }}</div>
+        <div v-if="loading" class="loading">{{ $t('race_detail.loading_details') }}</div>
+        <div v-else-if="error" class="error">{{ $t('race_detail.error_loading_details') }}</div>
 
         <template v-else-if="raceDetails">
             <div class="back-button" @click="goBack">
-                ← Back to Races
+                {{ $t('race_detail.back_to_races') }}
             </div>
 
             <div class="race-header">
@@ -13,7 +13,7 @@
                     <h1>{{ raceDetails.name }}</h1>
                     <div class="race-meta">
                         <span class="status" :class="'status-' + raceDetails.status">
-                            {{ getRaceStatusLabel(raceDetails.status) }}
+                            {{ getRaceStatusLabel(raceDetails.status, t) }}
                         </span>
                         <span>{{ raceDetails.location }}</span>
                         <span>{{ formatDate(raceDetails.startDate) }}</span>
@@ -39,8 +39,8 @@
                         @runnerClick="handleRunnerClick" />
 
                     <div class="section">
-                        <h2>{{ raceDetails.status === 'future' ? 'Place Your Bet' : 'Runners' }}</h2>
-                        <div v-if="loadingRunners" class="loading">Loading runners...</div>
+                        <h2>{{ raceDetails.status === 'future' ? $t('race_detail.place_your_bet') : $t('race_detail.runners') }}</h2>
+                        <div v-if="loadingRunners" class="loading">{{ $t('race_detail.loading_runners') }}</div>
                         <div v-else class="runners-list">
                             <RunnerCard v-for="runner in runners" :key="runner.id" :runner="runner"
                                 :canBet="canPlaceBets" :isSelected="selectedRunnerId === runner.id" @bet="handleBet" />
@@ -49,12 +49,12 @@
                         <div v-if="runnersPagination.totalPages > 1" class="pagination">
                             <button :disabled="runnersPagination.page === 1"
                                 @click="loadRunnersPage(runnersPagination.page - 1)">
-                                Previous
+                                {{ $t('race_detail.previous') }}
                             </button>
-                            <span>Page {{ runnersPagination.page }} of {{ runnersPagination.totalPages }}</span>
+                            <span>{{ $t('race_detail.page') }} {{ runnersPagination.page }} {{ $t('race_detail.of') }} {{ runnersPagination.totalPages }}</span>
                             <button :disabled="runnersPagination.page === runnersPagination.totalPages"
                                 @click="loadRunnersPage(runnersPagination.page + 1)">
-                                Next
+                                {{ $t('race_detail.next') }}
                             </button>
                         </div>
                     </div>
@@ -62,10 +62,10 @@
 
                 <div class="sidebar">
                     <div class="section">
-                        <h3>Friends' Bets</h3>
-                        <div v-if="loadingBets" class="loading-small">Loading...</div>
+                        <h3>{{ $t('race_detail.friends_bets') }}</h3>
+                        <div v-if="loadingBets" class="loading-small">{{ $t('race_detail.loading') }}</div>
                         <div v-else-if="bets.length === 0" class="empty-state">
-                            No bets yet
+                            {{ $t('race_detail.no_bets_yet') }}
                         </div>
                         <div v-else class="bets-list">
                             <div v-for="bet in bets" :key="bet.userId" class="bet-item"
@@ -77,14 +77,14 @@
                                         {{ bet.runnerName }}
                                         <span v-if="bet.groups.length === 1">({{ bet.points }} pts)</span>
                                         <span v-if="isRunnerLeading(bet.runnerId)" class="leader-icon">👑</span>
-                                        <span v-if="getBetBadgeInfo(bet)" :class="getBetBadgeInfo(bet).class">
-                                            {{ getBetBadgeInfo(bet).text }}
+                                        <span v-if="getBetBadgeInfo(bet)" :class="getBetBadgeInfo(bet)!.class">
+                                            {{ getBetBadgeInfo(bet)!.text }}
                                         </span>
 
                                     </div>
                                     <div class="group-info">
-                                        <span v-if="bet.groups.length === 1">In {{ bet.groups[0].name }}</span>
-                                        <span v-else>In {{ bet.groups.length }} groups</span>
+                                        <span v-if="bet.groups.length === 1">{{ $t('race_detail.in_group', { groupName: bet.groups[0].name }) }}</span>
+                                        <span v-else>{{ $t('race_detail.in_groups', { count: bet.groups.length }) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -103,12 +103,14 @@ import LiveRanking from '../components/LiveRanking.vue';
 import Podium from '../components/Podium.vue';
 import RunnerCard from '../components/RunnerCard.vue';
 import Avatar from '../components/Avatar.vue';
-import { raceService, groupService, betService } from '../services/api';
+import { raceService, betService } from '../services/api';
 import { formatDate, getRaceStatusLabel } from '../utils/date';
 import type { RaceDetails, Runner, RaceProgress, UserBetInfo } from '../types';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(false);
 const loadingRunners = ref(false);
@@ -128,7 +130,6 @@ const runnersPagination = ref({
     totalPages: 0,
 });
 
-const groupId = 'default-group';
 let liveUpdateInterval: number | null = null;
 
 const canPlaceBets = computed(() => {
@@ -279,36 +280,36 @@ async function loadBets() {
     try {
         const raceId = route.params.id as string;
         bets.value = await raceService.getAllBetsForRace(raceId);
-
-        // Add mock bets for past races if no real bets are found
         if (raceDetails.value?.status === 'past' && bets.value.length === 0) {
-            // Assuming liveData.value.rankings is available and has at least one runner
             const winningRunnerId = liveData.value?.rankings.find(r => r.position === 1)?.runnerId;
             const winningRunnerName = liveData.value?.rankings.find(r => r.position === 1)?.runnerName;
-
+        
             const mockBets: UserBetInfo[] = [
                 {
                     userId: 'mock-user-1',
                     userName: 'Alice',
-                    runnerId: winningRunnerId || 'runner-1', // Bet on the winner if available
+                    runnerId: winningRunnerId || 'runner-1',
                     runnerName: winningRunnerName || 'Runner 1',
                     points: 100,
+                    placedAt: new Date().toISOString(),
                     groups: [{ id: 'group-a', name: 'Friends' }],
                 },
                 {
                     userId: 'mock-user-2',
                     userName: 'Bob',
-                    runnerId: 'runner-2', // Bet on a non-winner
+                    runnerId: 'runner-2',
                     runnerName: 'Runner 2',
                     points: 50,
+                    placedAt: new Date().toISOString(),
                     groups: [{ id: 'group-a', name: 'Friends' }],
                 },
                 {
                     userId: 'mock-user-3',
                     userName: 'Charlie',
-                    runnerId: winningRunnerId || 'runner-1', // Another bet on the winner
+                    runnerId: winningRunnerId || 'runner-1',
                     runnerName: winningRunnerName || 'Runner 1',
                     points: 120,
+                    placedAt: new Date().toISOString(),
                     groups: [{ id: 'group-b', name: 'Family' }],
                 },
             ];
@@ -336,7 +337,7 @@ async function handleBet(runnerId: string) {
         await loadBets();
     } catch (err) {
         console.error('Error placing bet:', err);
-        alert('Failed to place bet. Please try again.');
+        alert(t('race_detail.error_placing_bet'));
     }
 }
 

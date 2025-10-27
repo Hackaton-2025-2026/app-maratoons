@@ -1,18 +1,18 @@
 <template>
     <div class="group-view">
         <div class="back-button" @click="goBack">
-            ← Back to My Groups
+            {{ $t('group_view.back_to_my_groups') }}
         </div>
 
         <div class="header">
-            <h1>{{ groupDetails?.name || 'Group' }}</h1>
-            <button v-if="currentUserIsAdmin" class="edit-group-button" @click="openEditModal" title="Edit group">
-                ✏️ Edit
+            <h1>{{ groupDetails?.name || $t('group_view.group_fallback_name') }}</h1>
+            <button v-if="currentUserIsAdmin" class="edit-group-button" @click="openEditModal" :title="$t('group_view.edit_group_title')">
+                {{ $t('group_view.edit_group_button') }}
             </button>
         </div>
 
-        <div v-if="loading" class="loading">Loading group data...</div>
-        <div v-else-if="error" class="error">{{ error }}</div>
+        <div v-if="loading" class="loading">{{ $t('group_view.loading_group_data') }}</div>
+        <div v-else-if="error" class="error">{{ $t('group_view.error_loading_group_data') }}</div>
 
         <template v-else>
             <div class="content-grid">
@@ -20,14 +20,14 @@
                     <GroupRankingTable :rankings="rankings" />
 
                     <div class="section">
-                        <h2>Members</h2>
+                        <h2>{{ $t('group_view.members_title') }}</h2>
                         <div class="members-list">
                             <div v-for="member in members" :key="member.id" class="member-item">
                                 <Avatar :firstName="member.firstName" :size="48" />
                                 <div class="member-info">
                                     <div class="member-name">
                                         {{ member.firstName }} {{ member.lastName }}
-                                        <span v-if="member.isAdmin" class="admin-badge">Admin</span>
+                                        <span v-if="member.isAdmin" class="admin-badge">{{ $t('group_view.admin_badge') }}</span>
                                     </div>
                                     <div class="member-meta">
                                         {{ member.email }}
@@ -37,7 +37,7 @@
                                     </div>
                                 </div>
                                 <div v-if="currentUserIsAdmin && !member.isAdmin && member.id !== currentUser?.id" class="member-actions">
-                                    <button class="ban-hammer-button" @click="handleBanMember(member.id)" title="Ban user from group">
+                                    <button class="ban-hammer-button" @click="handleBanMember(member.id)" :title="$t('group_view.ban_user_title')">
                                         🔨
                                     </button>
                                 </div>
@@ -48,19 +48,19 @@
 
                 <div class="sidebar">
                     <div class="section">
-                        <h3>Group Actions</h3>
+                        <h3>{{ $t('group_view.group_actions_title') }}</h3>
                         <div class="actions-list">
                             <button class="action-button" @click="handleShareGroup">
-                                📤 Share Group
+                                {{ $t('group_view.share_group_button') }}
                             </button>
                             <button v-if="currentUserIsAdmin" class="action-button danger" @click="handleResetPoints">
-                                🔄 Reset Points
+                                {{ $t('group_view.reset_points_button') }}
                             </button>
                             <button v-if="currentUserIsAdmin" class="action-button danger" @click="handleDeleteGroup">
-                                Delete Group
+                                {{ $t('group_view.delete_group_button') }}
                             </button>
                             <button class="action-button danger" @click="handleLeaveGroup">
-                                Leave Group
+                                {{ $t('group_view.leave_group_button') }}
                             </button>
                         </div>
                     </div>
@@ -70,14 +70,14 @@
 
         <div v-if="showJoinModal" class="modal-overlay" @click="showJoinModal = false">
             <div class="modal" @click.stop>
-                <h2>Join Group</h2>
-                <input v-model="joinCode" type="text" placeholder="Enter group code" class="input" />
+                <h2>{{ $t('group_view.join_group_modal_title') }}</h2>
+                <input v-model="joinCode" type="text" :placeholder="$t('group_view.enter_group_code_placeholder')" class="input" />
                 <div class="modal-actions">
                     <button class="action-button secondary" @click="showJoinModal = false">
-                        Cancel
+                        {{ $t('group_view.cancel_button') }}
                     </button>
                     <button class="action-button" @click="handleJoinGroup">
-                        Join
+                        {{ $t('group_view.join_button') }}
                     </button>
                 </div>
             </div>
@@ -85,17 +85,17 @@
 
         <div v-if="showShareModal" class="modal-overlay" @click="showShareModal = false">
             <div class="modal" @click.stop>
-                <h2>Share Group</h2>
-                <p class="share-description">Share this code with friends to invite them to {{ groupDetails?.name }}</p>
+                <h2>{{ $t('group_view.share_group_modal_title') }}</h2>
+                <p class="share-description">{{ $t('group_view.share_description', { groupName: groupDetails?.name }) }}</p>
                 <div class="share-code-container">
                     <input v-model="shareCode" type="text" readonly class="share-code-input" />
                     <button class="copy-button" @click="copyShareCode">
-                        {{ copied ? '✓ Copied!' : '📋 Copy' }}
+                        {{ copied ? $t('group_view.copied_button') : $t('group_view.copy_button') }}
                     </button>
                 </div>
                 <div class="modal-actions">
                     <button class="action-button" @click="showShareModal = false">
-                        Close
+                        {{ $t('group_view.close_button') }}
                     </button>
                 </div>
             </div>
@@ -103,17 +103,17 @@
 
         <div v-if="showEditModal" class="modal-overlay" @click="showEditModal = false">
             <div class="modal" @click.stop>
-                <h2>Edit Group</h2>
+                <h2>{{ $t('group_view.edit_group_modal_title') }}</h2>
                 <div class="form-group">
-                    <label for="group-name">Group Name</label>
-                    <input id="group-name" v-model="editGroupName" type="text" class="input" placeholder="Enter group name" />
+                    <label for="group-name">{{ $t('group_view.group_name_label') }}</label>
+                    <input id="group-name" v-model="editGroupName" type="text" class="input" :placeholder="$t('group_view.enter_group_name_placeholder')" />
                 </div>
                 <div class="modal-actions">
                     <button class="action-button secondary" @click="showEditModal = false">
                         Cancel
                     </button>
                     <button class="action-button" @click="handleSaveGroupEdit">
-                        Save Changes
+                        {{ $t('group_view.save_changes_button') }}
                     </button>
                 </div>
             </div>
@@ -131,9 +131,11 @@ import { authService } from '../services/auth';
 import { formatDate } from '../utils/date';
 import { mockGroups } from '../services/mockData';
 import type { GroupMember, GroupRanking } from '../types';
+import { useI18n } from 'vue-i18n'; // Import useI18n
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(false);
 const error = ref('');
@@ -193,7 +195,7 @@ async function loadGroupData() {
 
 async function handleJoinGroup() {
     if (!joinCode.value.trim()) {
-        alert('Please enter a group code');
+        alert(t('group_view.alert_enter_group_code'));
         return;
     }
 
@@ -204,13 +206,11 @@ async function handleJoinGroup() {
         await loadGroupData();
     } catch (err) {
         console.error('Error joining group:', err);
-        alert('Failed to join group. Please check the code and try again.');
+        alert(t('group_view.alert_error_joining_group'));
     }
 }
 
 function handleShareGroup() {
-    // Generate a share code for the group (in real app, this would come from the API)
-    const groupName = groupDetails.value?.name || 'Group';
     shareCode.value = `${groupId.value.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     showShareModal.value = true;
     copied.value = false;
@@ -223,7 +223,7 @@ function openEditModal() {
 
 async function handleSaveGroupEdit() {
     if (!editGroupName.value.trim()) {
-        alert('Please enter a group name');
+        alert(t('group_view.alert_enter_group_name'));
         return;
     }
 
@@ -237,10 +237,10 @@ async function handleSaveGroupEdit() {
         }
 
         showEditModal.value = false;
-        alert('Group updated successfully!');
+        alert(t('group_view.alert_group_updated_success'));
     } catch (err) {
         console.error('Error updating group:', err);
-        alert('Failed to update group. Please try again.');
+        alert(t('group_view.alert_error_updating_group'));
     }
 }
 
@@ -259,49 +259,49 @@ async function copyShareCode() {
 }
 
 async function handleDeleteGroup() {
-    if (!confirm('⚠️ WARNING: Are you sure you want to DELETE this group? This action cannot be undone and will remove all data associated with this group.')) {
+    if (!confirm(t('group_view.delete_confirm_1'))) {
         return;
     }
 
     // Double confirmation for destructive action
-    if (!confirm('This will permanently delete the group and all its data. Type DELETE to confirm or cancel.')) {
+    if (!confirm(t('group_view.delete_confirm_2'))) {
         return;
     }
 
     try {
         // In a real app, this would call the API
         // await groupService.deleteGroup(groupId.value);
-        alert('Group deleted successfully!');
+        alert(t('group_view.group_deleted_success'));
         router.push({ name: 'groups' });
     } catch (err) {
         console.error('Error deleting group:', err);
-        alert('Failed to delete group. Please try again.');
+        alert(t('group_view.error_deleting_group'));
     }
 }
 
 async function handleResetPoints() {
-    if (!confirm('⚠️ WARNING: Are you sure you want to RESET all points for this group? This action cannot be undone and will set all members\' points to 0.')) {
+    if (!confirm(t('group_view.reset_points_confirm_1'))) {
         return;
     }
 
     // Double confirmation for destructive action
-    if (!confirm('This will permanently reset all points. Type RESET to confirm or cancel.')) {
+    if (!confirm(t('group_view.reset_points_confirm_2'))) {
         return;
     }
 
     try {
         // In a real app, this would call the API
         // await groupService.resetGroupPoints(groupId.value);
-        alert('Group points reset successfully!');
+        alert(t('group_view.points_reset_success'));
         await loadGroupData(); // Reload data to reflect changes
     } catch (err) {
         console.error('Error resetting points:', err);
-        alert('Failed to reset points. Please try again.');
+        alert(t('group_view.error_resetting_points'));
     }
 }
 
 async function handleLeaveGroup() {
-    if (!confirm('Are you sure you want to leave this group?')) {
+    if (!confirm(t('group_view.leave_confirm'))) {
         return;
     }
 
@@ -310,12 +310,12 @@ async function handleLeaveGroup() {
         router.push({ name: 'groups' });
     } catch (err) {
         console.error('Error leaving group:', err);
-        alert('Failed to leave group. Please try again.');
+        alert(t('group_view.error_leaving_group'));
     }
 }
 
 async function handleBanMember(userId: string) {
-    if (!confirm('Are you sure you want to ban this member?')) {
+    if (!confirm(t('group_view.ban_member_confirm'))) {
         return;
     }
 
@@ -324,7 +324,7 @@ async function handleBanMember(userId: string) {
         await loadGroupData();
     } catch (err) {
         console.error('Error banning member:', err);
-        alert('Failed to ban member. Please try again.');
+        alert(t('group_view.error_banning_member'));
     }
 }
 

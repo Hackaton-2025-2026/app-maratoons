@@ -11,9 +11,9 @@
             </div>
         </div>
         <div class="points-section">
-            <div class="points">{{ runner.points }} pts</div>
+            <div class="points">{{ runner.points }} {{ $t('runner_card.points_suffix') }}</div>
             <button v-if="canBet" class="bet-button" :class="{ selected: isSelected }" @click="$emit('bet', runner.id)">
-                {{ isSelected ? 'Selected' : 'Bet' }}
+                {{ isSelected ? $t('runner_card.selected_button') : $t('runner_card.bet_button') }}
             </button>
         </div>
     </div>
@@ -21,6 +21,8 @@
 
 <script setup lang="ts">
 import type { Runner } from '../types';
+import { useI18n } from 'vue-i18n';
+useI18n();
 
 defineProps<{
     runner: Runner;

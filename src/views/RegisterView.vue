@@ -2,8 +2,8 @@
     <div class="auth-view">
         <div class="auth-container">
             <div class="auth-card">
-                <h1>Create Account</h1>
-                <p class="subtitle">Join Marathoons to start betting with friends</p>
+                <h1>{{ $t('register_view.create_account_title') }}</h1>
+                <p class="subtitle">{{ $t('register_view.subtitle') }}</p>
 
                 <form @submit.prevent="handleRegister" class="auth-form">
                     <div v-if="error" class="error-message">
@@ -11,62 +11,62 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="name">Full Name</label>
+                        <label for="name">{{ $t('register_view.full_name_label') }}</label>
                         <input
                             id="name"
                             v-model="name"
                             type="text"
-                            placeholder="Enter your full name"
+                            :placeholder="$t('register_view.full_name_placeholder')"
                             required
                             autocomplete="name"
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="email">Email</label>
+                        <label for="email">{{ $t('register_view.email_label') }}</label>
                         <input
                             id="email"
                             v-model="email"
                             type="email"
-                            placeholder="Enter your email"
+                            :placeholder="$t('register_view.email_placeholder')"
                             required
                             autocomplete="email"
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Password</label>
+                        <label for="password">{{ $t('register_view.password_label') }}</label>
                         <input
                             id="password"
                             v-model="password"
                             type="password"
-                            placeholder="Create a password"
+                            :placeholder="$t('register_view.create_password_placeholder')"
                             required
                             autocomplete="new-password"
                             minlength="6"
                         />
-                        <span class="hint">Minimum 6 characters</span>
+                        <span class="hint">{{ $t('register_view.password_hint') }}</span>
                     </div>
 
                     <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
+                        <label for="confirmPassword">{{ $t('register_view.confirm_password_label') }}</label>
                         <input
                             id="confirmPassword"
                             v-model="confirmPassword"
                             type="password"
-                            placeholder="Confirm your password"
+                            :placeholder="$t('register_view.confirm_password_placeholder')"
                             required
                             autocomplete="new-password"
                         />
                     </div>
 
                     <button type="submit" class="btn-primary" :disabled="loading">
-                        {{ loading ? 'Creating account...' : 'Create Account' }}
+                        {{ loading ? $t('register_view.creating_account_button') : $t('register_view.create_account_button') }}
                     </button>
                 </form>
 
                 <div class="auth-footer">
-                    <p>Already have an account? <router-link to="/login">Sign in</router-link></p>
+                    <p>{{ $t('register_view.already_have_account') }} <router-link to="/login">{{ $t('register_view.sign_in_link') }}</router-link></p>
                 </div>
             </div>
         </div>
@@ -77,8 +77,10 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../services/auth';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
+const { t } = useI18n();
 
 const name = ref('');
 const email = ref('');
@@ -92,17 +94,17 @@ async function handleRegister() {
 
     // Validation
     if (!name.value || !email.value || !password.value || !confirmPassword.value) {
-        error.value = 'Please fill in all fields';
+        error.value = t('register_view.error_fill_all_fields');
         return;
     }
 
     if (password.value.length < 6) {
-        error.value = 'Password must be at least 6 characters';
+        error.value = t('register_view.error_password_length');
         return;
     }
 
     if (password.value !== confirmPassword.value) {
-        error.value = 'Passwords do not match';
+        error.value = t('register_view.error_passwords_match');
         return;
     }
 
@@ -119,7 +121,7 @@ async function handleRegister() {
         router.push('/');
     } catch (err: any) {
         console.error('Registration error:', err);
-        error.value = err.response?.data?.error || 'Registration failed. Please try again.';
+        error.value = err.response?.data?.error || t('register_view.error_registration_failed');
     } finally {
         loading.value = false;
     }

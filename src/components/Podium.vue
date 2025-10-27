@@ -1,6 +1,6 @@
 <template>
     <div class="podium-container">
-        <h3 class="podium-title">🏆 Race Winners</h3>
+        <h3 class="podium-title">{{ $t('podium.race_winners') }}</h3>
         <div class="podium">
             <!-- Second Place -->
             <div v-if="secondPlace" class="podium-place second" @click="handlePodiumClick(secondPlace)">
@@ -39,6 +39,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { LiveRanking } from '../types';
+import { useI18n } from 'vue-i18n';
+useI18n();
 
 const props = defineProps<{
     rankings: LiveRanking[];

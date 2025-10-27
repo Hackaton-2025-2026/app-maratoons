@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { RouterView, useRouter, useRoute } from 'vue-router';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { authService } from './services/auth';
 import { useDarkMode } from './composables/useDarkMode';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const route = useRoute();
 const { isDark, toggleDarkMode } = useDarkMode();
+const { t, locale } = useI18n();
 
 const currentUser = computed(() => authService.getCurrentUser());
 const isAuthenticated = computed(() => authService.isAuthenticated());
 const showNav = computed(() => route.path !== '/login' && route.path !== '/register');
+watch(locale, () => {
+  document.title = t('app.title');
+}, { immediate: true });
 
 async function handleLogout() {
   await authService.logout();
@@ -22,17 +27,17 @@ async function handleLogout() {
   <div id="app">
     <nav v-if="showNav" class="navbar">
       <div class="nav-container">
-        <router-link to="/" class="logo">Marathoons</router-link>
+        <router-link to="/" class="logo">{{ $t('app.logo') }}</router-link>
         <div class="nav-links">
-          <router-link to="/races" class="nav-link">Races</router-link>
-          <router-link to="/groups" class="nav-link">My Groups</router-link>
-          <button @click="toggleDarkMode" class="theme-toggle" :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <router-link to="/races" class="nav-link">{{ $t('app.nav.races') }}</router-link>
+          <router-link to="/groups" class="nav-link">{{ $t('app.nav.my_groups') }}</router-link>
+          <button @click="toggleDarkMode" class="theme-toggle" :title="isDark ? $t('app.theme_toggle.light_mode') : $t('app.theme_toggle.dark_mode')">
             <span v-if="isDark">☀️</span>
             <span v-else>🌙</span>
           </button>
           <div v-if="isAuthenticated" class="user-section">
             <span class="user-name">{{ currentUser?.name }}</span>
-            <button @click="handleLogout" class="logout-btn">Logout</button>
+            <button @click="handleLogout" class="logout-btn">{{ $t('app.logout') }}</button>
           </div>
         </div>
       </div>

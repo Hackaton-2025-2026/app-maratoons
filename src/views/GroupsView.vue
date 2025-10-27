@@ -1,17 +1,17 @@
 <template>
     <div class="groups-view">
         <div class="header">
-            <h1>My Groups</h1>
+            <h1>{{ $t('groups_view.my_groups_title') }}</h1>
         </div>
 
-        <div v-if="loading" class="loading">Loading groups...</div>
+        <div v-if="loading" class="loading">{{ $t('groups_view.loading_groups') }}</div>
         <div v-else-if="error" class="error">{{ error }}</div>
 
         <template v-else>
             <div v-if="userGroups.length === 0" class="empty-state">
-                <p>You haven't joined any groups yet.</p>
+                <p>{{ $t('groups_view.empty_state_message') }}</p>
                 <button class="action-button" @click="showJoinModal = true">
-                    Join a Group
+                    {{ $t('groups_view.join_a_group_button') }}
                 </button>
             </div>
 
@@ -22,9 +22,9 @@
                         <h3>{{ group.name }}</h3>
                         <p v-if="group.description" class="description">{{ group.description }}</p>
                         <div class="group-meta">
-                            <span>{{ group.memberCount }} members</span>
-                            <span>{{ getGroupPoints(group.id) }} points</span>
-                            <span v-if="isGroupAdmin(group.id)" class="admin-badge">Admin</span>
+                            <span>{{ $t('groups_view.members_count', { count: group.memberCount }) }}</span>
+                            <span>{{ $t('groups_view.points_count', { count: getGroupPoints(group.id) }) }}</span>
+                            <span v-if="isGroupAdmin(group.id)" class="admin-badge">{{ $t('groups_view.admin_badge') }}</span>
                         </div>
                     </div>
                 </div>
@@ -32,21 +32,21 @@
 
             <div class="actions">
                 <button class="action-button secondary" @click="showJoinModal = true">
-                    Join Another Group
+                    {{ $t('groups_view.join_another_group_button') }}
                 </button>
             </div>
         </template>
 
         <div v-if="showJoinModal" class="modal-overlay" @click="showJoinModal = false">
             <div class="modal" @click.stop>
-                <h2>Join Group</h2>
-                <input v-model="joinCode" type="text" placeholder="Enter group code" class="input" />
+                <h2>{{ $t('groups_view.join_group_modal_title') }}</h2>
+                <input v-model="joinCode" type="text" :placeholder="$t('groups_view.enter_group_code_placeholder')" class="input" />
                 <div class="modal-actions">
                     <button class="action-button secondary" @click="showJoinModal = false">
-                        Cancel
+                        {{ $t('groups_view.cancel_button') }}
                     </button>
                     <button class="action-button" @click="handleJoinGroup">
-                        Join
+                        {{ $t('groups_view.join_button') }}
                     </button>
                 </div>
             </div>
@@ -59,9 +59,9 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../services/auth';
 import { mockGroups, mockGroupMembers } from '../services/mockData';
-import type { Group, GroupMember } from '../types';
-
+import { useI18n } from 'vue-i18n';
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(false);
 const error = ref('');
@@ -106,7 +106,7 @@ function goToGroup(groupId: string) {
 
 async function handleJoinGroup() {
     if (!joinCode.value.trim()) {
-        alert('Please enter a group code');
+        alert(t('groups_view.alert_enter_group_code'));
         return;
     }
 
@@ -115,11 +115,11 @@ async function handleJoinGroup() {
         // await groupService.joinGroup(joinCode.value);
         showJoinModal.value = false;
         joinCode.value = '';
-        alert('Successfully joined the group!');
+        alert(t('groups_view.alert_joined_group_success'));
         // Reload user data to get updated groups list
     } catch (err) {
         console.error('Error joining group:', err);
-        alert('Failed to join group. Please check the code and try again.');
+        alert(t('groups_view.alert_error_joining_group'));
     }
 }
 
