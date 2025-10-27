@@ -1,0 +1,311 @@
+/* Dark Mode Global Styles */
+
+/* Components dark mode styles */
+:root.dark .race-card,
+:root.dark .runner-card,
+:root.dark .live-ranking,
+:root.dark .section,
+:root.dark .auth-card {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+:root.dark .race-card:hover {
+  box-shadow: 0 4px 16px var(--shadow-heavy);
+}
+
+:root.dark .runner-card {
+  border-color: var(--border-color);
+}
+
+:root.dark .runner-card:hover:not(.disabled) {
+  border-color: #3498db;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+:root.dark .ranking-item {
+  background: var(--bg-primary);
+}
+
+:root.dark .ranking-item.highlighted {
+  background: #1a3a1a;
+  border-color: #27ae60;
+}
+
+:root.dark .bet-item {
+  background: var(--bg-primary);
+}
+
+:root.dark .bet-item.bet-leader {
+  background: linear-gradient(135deg, #3a3520 0%, #4a3a1a 50%, #3a3520 100%);
+}
+
+:root.dark h1,
+:root.dark h2,
+:root.dark h3,
+:root.dark h4 {
+  color: var(--text-primary);
+}
+
+:root.dark .label,
+:root.dark .user-name,
+:root.dark .runner-details h4 {
+  color: var(--text-primary);
+}
+
+:root.dark .value,
+:root.dark .bet-details,
+:root.dark .time {
+  color: var(--text-secondary);
+}
+
+:root.dark input {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+:root.dark input:focus {
+  border-color: #3498db;
+  background: var(--bg-secondary);
+}
+
+:root.dark .form-group label {
+  color: var(--text-primary);
+}
+
+:root.dark .bib {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+:root.dark .empty-state,
+:root.dark .loading,
+:root.dark .loading-small {
+  color: var(--text-secondary);
+}
+
+:root.dark .error {
+  background: #3a1a1a;
+  border-color: #e74c3c;
+}
+
+:root.dark .pagination button {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+:root.dark .pagination button:hover:not(:disabled) {
+  background: #3498db;
+  color: white;
+}
+
+:root.dark .pagination button:disabled {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+/* Race card past styling in dark mode */
+:root.dark .race-card--past {
+  background: var(--bg-primary);
+  opacity: 0.7;
+}
+
+:root.dark .race-card--past .race-header h3 {
+  color: var(--text-secondary);
+}
+
+:root.dark .race-card--past .value {
+  color: var(--text-secondary);
+}
+
+/* Filter buttons in dark mode */
+:root.dark .filter-button {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+:root.dark .filter-button.active {
+  background: #3498db;
+  color: white;
+}
+
+:root.dark .filter-button:hover {
+  border-color: #3498db;
+}
+
+/* Modal/Dialog dark mode */
+:root.dark .modal-content {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+/* Avatar component */
+:root.dark .avatar {
+  border-color: var(--border-color);
+}
+
+/* Progress bar */
+:root.dark .progress-bar {
+  background: var(--bg-primary);
+}
+
+/* Status badges */
+:root.dark .status-past {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+:root.dark .status-future {
+  background: #1a2a3a;
+  color: #64b5f6;
+}
+
+:root.dark .status-ongoing {
+  background: #1a3a1a;
+  color: #81c784;
+}
+
+/* Group ranking table */
+:root.dark .ranking-table {
+  background: var(--bg-secondary);
+}
+
+:root.dark .ranking-table th {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+:root.dark .ranking-table td {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+:root.dark .ranking-table tr:hover {
+  background: var(--bg-primary);
+}
+
+:root.dark .table-row.is-current-user {
+  background: linear-gradient(135deg, #1a3a4a 0%, #2a4a5a 100%);
+  border: 2px solid #3498db;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.5);
+}
+
+/* Demo credentials box */
+:root.dark .demo-credentials {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+:root.dark .demo-credentials strong {
+  color: var(--text-primary);
+}
+
+/* Hint text */
+:root.dark .hint {
+  color: var(--text-secondary);
+}
+
+/* Subtitle */
+:root.dark .subtitle {
+  color: var(--text-secondary);
+}
+
+/* Description */
+:root.dark .description {
+  color: var(--text-secondary);
+}
+
+/* Race meta */
+:root.dark .race-meta span {
+  color: var(--text-secondary);
+}
+
+/* Last update */
+:root.dark .last-update {
+  color: var(--text-secondary);
+}
+
+/* Runner meta */
+:root.dark .runner-meta {
+  color: var(--text-secondary);
+}
+
+/* Position indicator */
+:root.dark .position {
+  background: #3498db;
+}
+
+:root.dark .ranking-item:nth-child(1) .position {
+  background: #f1c40f;
+}
+
+:root.dark .ranking-item:nth-child(2) .position {
+  background: #95a5a6;
+}
+
+:root.dark .ranking-item:nth-child(3) .position {
+  background: #cd7f32;
+}
+
+/* Ban hammer button */
+:root.dark .ban-hammer-button {
+  border-color: #e74c3c;
+  background: transparent;
+}
+
+:root.dark .ban-hammer-button:hover {
+  background: #e74c3c;
+}
+
+/* Member items */
+:root.dark .member-item {
+  background: var(--bg-primary);
+}
+
+/* Modal */
+:root.dark .modal {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+:root.dark .modal h2 {
+  color: var(--text-primary);
+}
+
+:root.dark .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Race detail header */
+:root.dark .race-header {
+  background: var(--bg-secondary);
+}
+
+:root.dark .race-info h1 {
+  color: var(--text-primary);
+}
+
+:root.dark .race-info .description {
+  color: var(--text-secondary);
+}
+
+/* Status spans in race detail */
+:root.dark .race-meta .status {
+  /* Status badges already handled in main dark mode CSS */
+}
+
+/* Section headers */
+:root.dark .section h2,
+:root.dark .section h3 {
+  color: var(--text-primary);
+}
+
+/* Smooth transitions for all color changes */
+:root.dark * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
