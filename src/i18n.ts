@@ -1,8 +1,8 @@
 import { createI18n } from 'vue-i18n';
 
-// Import translations directly - Vite will bundle these as modules
-import enMessages from './locales/en.json';
-import frMessages from './locales/fr.json';
+// Direct JSON imports with import assertion for Vercel compatibility
+import enMessages from './locales/en.json' assert { type: 'json' };
+import frMessages from './locales/fr.json' assert { type: 'json' };
 
 // Function to get browser language
 function getBrowserLanguage() {
