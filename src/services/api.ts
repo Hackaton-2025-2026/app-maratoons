@@ -23,6 +23,7 @@ const api1: AxiosInstance = axios.create({
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
     },
+    withCredentials: true, // Enable sending cookies with requests
 });
 
 const api2: AxiosInstance = axios.create({
@@ -31,15 +32,6 @@ const api2: AxiosInstance = axios.create({
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
     },
-});
-
-// Add token interceptor to api1 for authenticated requests
-api1.interceptors.request.use((config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
 });
 
 // Initialize mock adapter if enabled

@@ -13,15 +13,7 @@ const authApi: AxiosInstance = axios.create({
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
     },
-});
-
-// Add token to requests if it exists
-authApi.interceptors.request.use((config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+    withCredentials: true, // Enable sending cookies with requests
 });
 
 // Initialize mock adapter if enabled
@@ -53,64 +45,36 @@ initUser();
 export const authService = {
     async login(credentials: LoginCredentials): Promise<AuthResponse> {
         // Backend endpoint: POST /api/users/login
-        // Backend returns: { token } (no user object)
+        // Backend returns: { message, user } and sets httpOnly cookie
         const response = await authApi.post('/api/users/login', credentials);
-        const { token } = response.data;
+        const { user: backendUser } = response.data;
 
-        // Store token in localStorage
-        localStorage.setItem('auth_token', token);
-
-        // Decode JWT to get user ID or fetch user data
-        // For now, we'll fetch user data separately if needed
-        // The backend might include user data in the token payload
-        let user: User | null = null;
-
-        try {
-            // Attempt to decode JWT token to get user ID
-            const tokenPayload = this.decodeToken(token);
-            if (tokenPayload && tokenPayload.id) {
-                // Fetch complete user profile from API to get current solde/points
-                try {
-                    const userResponse = await authApi.get(`/api/users/${tokenPayload.id}`);
-                    user = transformBackendUser(userResponse.data);
-                    localStorage.setItem('auth_user', JSON.stringify(user));
-                    currentUserRef.value = user; // Update reactive state
-                } catch (err) {
-                    console.warn('Could not fetch user profile, using token data:', err);
-                    // Fallback to token payload if API call fails
-                    user = transformBackendUser(tokenPayload);
-                    localStorage.setItem('auth_user', JSON.stringify(user));
-                    currentUserRef.value = user; // Update reactive state
-                }
-            }
-        } catch (error) {
-            console.warn('Could not decode token, user will be fetched on demand');
-        }
+        // Transform and store user data in localStorage
+        const user = transformBackendUser(backendUser);
+        localStorage.setItem('auth_user', JSON.stringify(user));
+        currentUserRef.value = user;
 
         return {
-            token,
-            user: user || { id: '', name: '', email: credentials.email, role: 'user' }
+            token: '', // Token is now in httpOnly cookie
+            user
         };
     },
 
     async register(data: RegisterData): Promise<AuthResponse> {
         // Backend endpoint: POST /api/users/register
-        // Backend returns: { user, token }
+        // Backend returns: { message, user } and sets httpOnly cookie
         const response = await authApi.post('/api/users/register', data);
-        const backendResponse = response.data;
-
-        // Store token in localStorage
-        localStorage.setItem('auth_token', backendResponse.token);
+        const { user: backendUser } = response.data;
 
         // Transform and store user data
-        const user = transformBackendUser(backendResponse.user || backendResponse);
+        const user = transformBackendUser(backendUser);
         localStorage.setItem('auth_user', JSON.stringify(user));
 
         // Update reactive state
         currentUserRef.value = user;
 
         return {
-            token: backendResponse.token,
+            token: '', // Token is now in httpOnly cookie
             user
         };
     },
@@ -134,15 +98,14 @@ export const authService = {
     },
 
     async logout(): Promise<void> {
-        // Optional: Call API to invalidate token on server
+        // Call API to clear the httpOnly cookie
         try {
-            await authApi.post('/auth/logout');
+            await authApi.post('/api/users/logout');
         } catch (error) {
             console.error('Logout API call failed:', error);
         }
 
         // Clear local storage
-        localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
 
         // Update reactive state
@@ -153,20 +116,15 @@ export const authService = {
         return currentUserRef.value;
     },
 
-    getToken(): string | null {
-        return localStorage.getItem('auth_token');
-    },
-
     isAuthenticated(): boolean {
-        return !!this.getToken();
+        return !!currentUserRef.value;
     },
 
     // Refresh user data from API to get latest solde/points
     async refreshUserData(): Promise<User | null> {
-        const token = this.getToken();
         const currentUser = this.getCurrentUser();
 
-        if (!token || !currentUser) {
+        if (!currentUser) {
             return null;
         }
 
