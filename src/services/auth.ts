@@ -11,7 +11,6 @@ const authApi: AxiosInstance = axios.create({
     baseURL: API_1_URL,
     headers: {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
     },
     withCredentials: true, // Enable sending cookies with requests
 });

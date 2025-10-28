@@ -21,7 +21,6 @@ const api1: AxiosInstance = axios.create({
     baseURL: API_1_URL,
     headers: {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
     },
     withCredentials: true, // Enable sending cookies with requests
 });
@@ -30,7 +29,6 @@ const api2: AxiosInstance = axios.create({
     baseURL: API_2_URL,
     headers: {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Skip ngrok browser warning
     },
 });
 
