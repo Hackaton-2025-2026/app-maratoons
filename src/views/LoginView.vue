@@ -2,8 +2,8 @@
     <div class="auth-view">
         <div class="auth-container">
             <div class="auth-card">
-                <h1>{{ $t('login_view.welcome_back_title') }}</h1>
-                <p class="subtitle">{{ $t('login_view.subtitle') }}</p>
+                <h1>{{ $t('welcome_back_title') }}</h1>
+                <p class="subtitle">{{ $t('subtitle') }}</p>
 
                 <form @submit.prevent="handleLogin" class="auth-form">
                     <div v-if="error" class="error-message">
@@ -11,43 +11,43 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="email">{{ $t('login_view.email_label') }}</label>
+                        <label for="email">{{ $t('email_label') }}</label>
                         <input
                             id="email"
                             v-model="email"
                             type="email"
-                            :placeholder="$t('login_view.email_placeholder')"
+                            :placeholder="$t('email_placeholder')"
                             required
                             autocomplete="email"
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="password">{{ $t('login_view.password_label') }}</label>
+                        <label for="password">{{ $t('password_label') }}</label>
                         <input
                             id="password"
                             v-model="password"
                             type="password"
-                            :placeholder="$t('login_view.password_placeholder')"
+                            :placeholder="$t('password_placeholder')"
                             required
                             autocomplete="current-password"
                         />
                     </div>
 
                     <button type="submit" class="btn-primary" :disabled="loading">
-                        {{ loading ? $t('login_view.signing_in_button') : $t('login_view.sign_in_button') }}
+                        {{ loading ? $t('signing_in_button') : $t('sign_in_button') }}
                     </button>
                 </form>
 
                 <div class="auth-footer">
-                    <p>{{ $t('login_view.dont_have_account') }} <router-link to="/register">{{ $t('login_view.sign_up_link') }}</router-link></p>
+                    <p>{{ $t('dont_have_account') }} <router-link to="/register">{{ $t('sign_up_link') }}</router-link></p>
                 </div>
 
                 <!-- Only show demo credentials in mock mode -->
                 <div v-if="useMock" class="demo-credentials">
-                    <p><strong>{{ $t('login_view.demo_accounts_title') }}</strong></p>
-                    <p>{{ $t('login_view.demo_admin_credentials') }}</p>
-                    <p>{{ $t('login_view.demo_user_credentials') }}</p>
+                    <p><strong>{{ $t('demo_accounts_title') }}</strong></p>
+                    <p>{{ $t('demo_admin_credentials') }}</p>
+                    <p>{{ $t('demo_user_credentials') }}</p>
                 </div>
             </div>
         </div>
@@ -55,13 +55,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../services/auth';
 import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const { t } = useI18n();
+
+// Inline fallback translations - guaranteed to work
+const fallback = {
+    welcome_back_title: "Welcome Back",
+    subtitle: "Sign in to your Marathoons account",
+    email_label: "Email",
+    email_placeholder: "Enter your email",
+    password_label: "Password",
+    password_placeholder: "Enter your password",
+    signing_in_button: "Signing in...",
+    sign_in_button: "Sign In",
+    dont_have_account: "Don't have an account?",
+    sign_up_link: "Sign up",
+    demo_accounts_title: "Demo Accounts:",
+    demo_admin_credentials: "Admin: john@example.com / password123",
+    demo_user_credentials: "User: jane@example.com / password123",
+    error_fill_all_fields: "Please fill in all fields",
+    error_login_failed: "Login failed. Please try again."
+};
+
+// Safe translation function with fallback
+const $t = (key: string) => {
+    try {
+        const translated = t('login_view.' + key);
+        // If translation returns the key itself, use fallback
+        if (translated === 'login_view.' + key || translated.includes('login_view.')) {
+            return fallback[key as keyof typeof fallback] || key;
+        }
+        return translated;
+    } catch {
+        return fallback[key as keyof typeof fallback] || key;
+    }
+};
 
 // Check if mock mode is enabled
 const useMock = import.meta.env.VITE_USE_MOCK === 'true';
@@ -73,7 +106,7 @@ const error = ref('');
 
 async function handleLogin() {
     if (!email.value || !password.value) {
-        error.value = t('login_view.error_fill_all_fields');
+        error.value = $t('error_fill_all_fields');
         return;
     }
 
@@ -90,7 +123,7 @@ async function handleLogin() {
         router.push('/');
     } catch (err: any) {
         console.error('Login error:', err);
-        error.value = err.response?.data?.error || t('login_view.error_login_failed');
+        error.value = err.response?.data?.error || $t('error_login_failed');
     } finally {
         loading.value = false;
     }

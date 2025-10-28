@@ -18,9 +18,10 @@
         </div>
 
         <div v-if="pagination.totalPages > 1" class="pagination">
-                            <button :disabled="pagination.page === 1" @click="loadPage(pagination.page - 1)">
-                                {{ $t('races_view.previous_button') }}
-                            </button>            <span>{{ $t('races_view.page_text') }} {{ pagination.page }} {{ $t('races_view.of_text') }} {{ pagination.totalPages }}</span>
+            <button :disabled="pagination.page === 1" @click="loadPage(pagination.page - 1)">
+                {{ $t('races_view.previous_button') }}
+            </button>
+            <span>{{ $t('races_view.page_text') }} {{ pagination.page }} {{ $t('races_view.of_text') }} {{ pagination.totalPages }}</span>
             <button :disabled="pagination.page === pagination.totalPages" @click="loadPage(pagination.page + 1)">
                 {{ $t('races_view.next_button') }}
             </button>
@@ -38,7 +39,42 @@ import { getRaceStatus } from '../utils/date';
 import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
-const { t } = useI18n(); // Use useI18n
+const { t } = useI18n();
+
+// Inline fallback translations
+const fallback = {
+    marathon_races_title: "Marathon Races",
+    filter_all: "All",
+    filter_live: "Live",
+    filter_upcoming: "Upcoming",
+    filter_past: "Past",
+    loading_races: "Loading races...",
+    error_loading_races: "Failed to load races. Please try again.",
+    previous_button: "Previous",
+    page_text: "Page",
+    of_text: "of",
+    next_button: "Next"
+};
+
+// Safe translation function
+const $t = (key: string) => {
+    try {
+        const translated = t(key);
+        if (translated === key || translated.includes('races_view.')) {
+            const shortKey = key.replace('races_view.', '').replace('filter_', '');
+            return fallback[shortKey as keyof typeof fallback] ||
+                   fallback[('filter_' + shortKey) as keyof typeof fallback] ||
+                   key;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('races_view.', '').replace('filter_', '');
+        return fallback[shortKey as keyof typeof fallback] ||
+               fallback[('filter_' + shortKey) as keyof typeof fallback] ||
+               key;
+    }
+};
+
 const loading = ref(false);
 const error = ref('');
 const races = ref<Race[]>([]);

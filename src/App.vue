@@ -10,11 +10,37 @@ const route = useRoute();
 const { isDark, toggleDarkMode } = useDarkMode();
 const { t, locale } = useI18n();
 
+// Inline fallback translations
+const fallback = {
+  logo: "Marathoons",
+  title: "Marathoons",
+  races: "Races",
+  my_groups: "My Groups",
+  light_mode: "Switch to Light Mode",
+  dark_mode: "Switch to Dark Mode",
+  logout: "Logout"
+};
+
+// Safe translation function
+const $t = (key: string) => {
+  try {
+    const translated = t(key);
+    if (translated === key || translated.includes('app.')) {
+      const shortKey = key.replace('app.', '').replace('nav.', '').replace('theme_toggle.', '');
+      return fallback[shortKey as keyof typeof fallback] || key;
+    }
+    return translated;
+  } catch {
+    const shortKey = key.replace('app.', '').replace('nav.', '').replace('theme_toggle.', '');
+    return fallback[shortKey as keyof typeof fallback] || key;
+  }
+};
+
 const currentUser = computed(() => authService.getCurrentUser());
 const isAuthenticated = computed(() => authService.isAuthenticated());
 const showNav = computed(() => route.path !== '/login' && route.path !== '/register');
 watch(locale, () => {
-  document.title = t('app.title');
+  document.title = $t('app.title');
 }, { immediate: true });
 
 async function handleLogout() {
