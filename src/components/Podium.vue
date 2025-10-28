@@ -40,7 +40,28 @@
 import { computed } from 'vue';
 import type { LiveRanking } from '../types';
 import { useI18n } from 'vue-i18n';
-useI18n();
+
+const { t } = useI18n();
+
+// Inline fallback translations
+const fallback = {
+    race_winners: "🏆 Race Winners"
+};
+
+// Safe translation function
+const $t = (key: string) => {
+    try {
+        const translated = t(key);
+        if (translated === key || translated.includes('podium.')) {
+            const shortKey = key.replace('podium.', '');
+            return fallback[shortKey as keyof typeof fallback] || key;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('podium.', '');
+        return fallback[shortKey as keyof typeof fallback] || key;
+    }
+};
 
 const props = defineProps<{
     rankings: LiveRanking[];

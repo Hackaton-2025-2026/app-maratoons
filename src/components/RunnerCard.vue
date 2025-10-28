@@ -27,7 +27,32 @@
 <script setup lang="ts">
 import type { Runner } from '../types';
 import { useI18n } from 'vue-i18n';
-useI18n();
+
+const { t } = useI18n();
+
+// Inline fallback translations
+const fallback = {
+    points_suffix: "pts",
+    selected_button: "Selected",
+    bet_button: "Bet",
+    bet_placed_button: "Bet Placed",
+    bet_placed_message: "Bet Placed"
+};
+
+// Safe translation function
+const $t = (key: string) => {
+    try {
+        const translated = t(key);
+        if (translated === key || translated.includes('runner_card.')) {
+            const shortKey = key.replace('runner_card.', '');
+            return fallback[shortKey as keyof typeof fallback] || key;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('runner_card.', '');
+        return fallback[shortKey as keyof typeof fallback] || key;
+    }
+};
 
 defineProps<{
     runner: Runner;

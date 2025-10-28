@@ -37,6 +37,30 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
+// Inline fallback translations
+const fallback = {
+    location_label: "Location:",
+    date_label: "Date:",
+    distance_label: "Distance:",
+    km_suffix: "km",
+    live_now: "Live Now"
+};
+
+// Safe translation function
+const $t = (key: string) => {
+    try {
+        const translated = t(key);
+        if (translated === key || translated.includes('race_card.')) {
+            const shortKey = key.replace('race_card.', '');
+            return fallback[shortKey as keyof typeof fallback] || key;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('race_card.', '');
+        return fallback[shortKey as keyof typeof fallback] || key;
+    }
+};
+
 defineEmits<{
     (e: 'click', id: string): void;
 }>();

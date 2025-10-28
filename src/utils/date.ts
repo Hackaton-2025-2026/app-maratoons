@@ -80,13 +80,35 @@ export function isRacePast(startDate: string): boolean {
 export function getRaceStatusLabel(startDate: string, t: TFunction): string {
     const status = getRaceStatus(startDate);
 
+    // Inline fallbacks for race status
+    const fallback: Record<string, string> = {
+        past: "Finished",
+        future: "Upcoming",
+        ongoing: "Live"
+    };
+
+    const translateWithFallback = (key: string): string => {
+        try {
+            const translated = t(key);
+            // If translation returns the key itself, use fallback
+            if (translated === key || translated.includes('race_status.')) {
+                const shortKey = key.replace('race_status.', '');
+                return fallback[shortKey] || key;
+            }
+            return translated;
+        } catch {
+            const shortKey = key.replace('race_status.', '');
+            return fallback[shortKey] || key;
+        }
+    };
+
     switch (status) {
         case 'past':
-            return t('race_status.past');
+            return translateWithFallback('race_status.past');
         case 'future':
-            return t('race_status.future');
+            return translateWithFallback('race_status.future');
         case 'current':
-            return t('race_status.ongoing'); // Map 'current' to 'ongoing' for display
+            return translateWithFallback('race_status.ongoing'); // Map 'current' to 'ongoing' for display
         default:
             return status;
     }
