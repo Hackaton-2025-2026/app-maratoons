@@ -52,7 +52,31 @@ import { computed, ref, watch } from 'vue';
 import type { LiveRanking } from '../types';
 import { formatTime } from '../utils/date';
 import { vConfetti } from '@neoconfetti/vue'; // Import the directive
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
+
+// Inline fallback translations
+const fallback = {
+    title: "Live Ranking",
+    last_update: "Last Update",
+    new_leader: "New Leader"
+};
+
+// Safe translation function
+const $t = (key: string) => {
+    try {
+        const translated = t(key);
+        if (translated === key || translated.includes('live_ranking.')) {
+            const shortKey = key.replace('live_ranking.', '');
+            return fallback[shortKey as keyof typeof fallback] || key;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('live_ranking.', '');
+        return fallback[shortKey as keyof typeof fallback] || key;
+    }
+};
 
 const props = defineProps<{
     rankings: LiveRanking[];
