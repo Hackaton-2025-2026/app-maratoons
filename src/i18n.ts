@@ -1,11 +1,8 @@
 import { createI18n } from 'vue-i18n';
-import en from './locales/en.json';
-import fr from './locales/fr.json';
 
-const messages = {
-  en,
-  fr
-};
+// Import translations directly - Vite will bundle these as modules
+import enMessages from './locales/en.json';
+import frMessages from './locales/fr.json';
 
 // Function to get browser language
 function getBrowserLanguage() {
@@ -19,12 +16,18 @@ function getBrowserLanguage() {
 
 const detectedLocale = getBrowserLanguage();
 
+// Create i18n instance with explicit configuration
 const i18n = createI18n({
-  locale: detectedLocale, // set locale based on browser
-  fallbackLocale: 'en', // set fallback locale to English
-  messages, // set locale messages
-  legacy: false, // you must set `false` to use Composition API
-  globalInjection: true, // Allow global injection of $t, $tc, etc.
+  locale: detectedLocale,
+  fallbackLocale: 'en',
+  legacy: false, // Use Composition API
+  globalInjection: true, // Enable $t in templates
+  messages: {
+    en: enMessages,
+    fr: frMessages
+  },
+  missingWarn: false, // Disable missing translation warnings in production
+  fallbackWarn: false
 });
 
 export default i18n;
