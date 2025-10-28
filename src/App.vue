@@ -22,7 +22,7 @@ const fallback = {
 };
 
 // Safe translation function
-const $t = (key: string) => {
+const getTranslation = (key: string) => {
   try {
     const translated = t(key);
     if (translated === key || translated.includes('app.')) {
@@ -40,7 +40,7 @@ const currentUser = computed(() => authService.getCurrentUser());
 const isAuthenticated = computed(() => authService.isAuthenticated());
 const showNav = computed(() => route.path !== '/login' && route.path !== '/register');
 watch(locale, () => {
-  document.title = $t('app.title');
+  document.title = getTranslation('app.title');
 }, { immediate: true });
 
 async function handleLogout() {
@@ -53,17 +53,17 @@ async function handleLogout() {
   <div id="app">
     <nav v-if="showNav" class="navbar">
       <div class="nav-container">
-        <router-link to="/" class="logo">{{ $t('app.logo') }}</router-link>
+        <router-link to="/" class="logo">{{ getTranslation('app.logo') }}</router-link>
         <div class="nav-links">
-          <router-link to="/races" class="nav-link">{{ $t('app.nav.races') }}</router-link>
-          <router-link to="/groups" class="nav-link">{{ $t('app.nav.my_groups') }}</router-link>
-          <button @click="toggleDarkMode" class="theme-toggle" :title="isDark ? $t('app.theme_toggle.light_mode') : $t('app.theme_toggle.dark_mode')">
+          <router-link to="/races" class="nav-link">{{ getTranslation('app.nav.races') }}</router-link>
+          <router-link to="/groups" class="nav-link">{{ getTranslation('app.nav.my_groups') }}</router-link>
+          <button @click="toggleDarkMode" class="theme-toggle" :title="isDark ? getTranslation('app.theme_toggle.light_mode') : getTranslation('app.theme_toggle.dark_mode')">
             <span v-if="isDark">☀️</span>
             <span v-else>🌙</span>
           </button>
           <div v-if="isAuthenticated" class="user-section">
             <span class="user-name">{{ currentUser?.name }}</span>
-            <button @click="handleLogout" class="logout-btn">{{ $t('app.logout') }}</button>
+            <button @click="handleLogout" class="logout-btn">{{ getTranslation('app.logout') }}</button>
           </div>
         </div>
       </div>
