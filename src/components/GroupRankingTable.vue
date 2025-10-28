@@ -1,11 +1,11 @@
 <template>
     <div class="group-ranking">
-        <h3>{{ $t('group_ranking_table.leaderboard_title') }}</h3>
+        <h3>{{ $t('leaderboard_title') }}</h3>
         <div class="ranking-table">
             <div class="table-header">
-                <div class="col-rank">{{ $t('group_ranking_table.rank') }}</div>
-                <div class="col-user">{{ $t('group_ranking_table.user') }}</div>
-                <div class="col-points">{{ $t('group_ranking_table.points') }}</div>
+                <div class="col-rank">{{ $t('rank') }}</div>
+                <div class="col-user">{{ $t('user') }}</div>
+                <div class="col-points">{{ $t('points') }}</div>
 
             </div>
             <div v-for="member in rankings" :key="member.userId" class="table-row"
@@ -19,7 +19,7 @@
                     <Avatar :name="member.userName" :size="32" />
                     <span class="user-name">
                         {{ member.userName }}
-                        <span v-if="isCurrentUser(member.userId)" class="you-badge">{{ $t('group_ranking_table.you_badge') }}</span>
+                        <span v-if="isCurrentUser(member.userId)" class="you-badge">{{ $t('you_badge') }}</span>
                     </span>
                 </div>
                 <div class="col-points">{{ member.totalPoints }}</div>

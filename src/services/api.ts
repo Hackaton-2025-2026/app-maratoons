@@ -3,12 +3,10 @@ import type {
     Race,
     Runner,
     RaceDetails,
-    RaceProgress,
     GroupMember,
     Bet,
     UserBetInfo,
     GroupRanking,
-    PaginatedResponse,
     MyBetsResponse
 } from '../types';
 import { setupMockAdapter } from './mockAdapter';
@@ -167,7 +165,7 @@ export const groupService = {
     },
 
     async getGroupRanking(groupId: string): Promise<GroupRanking[]> {
-        const response = await api1.get(`/group/${groupId}/rank`);
+        const response = await api1.get(`/api/groups/${groupId}/rank`);
         return response.data;
     },
 
