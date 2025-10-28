@@ -213,27 +213,13 @@ if (enFromFile && frFromFile) {
 console.log('EN Messages structure:', Object.keys(enMessages));
 console.log('FR Messages structure:', Object.keys(frMessages));
 
-// Function to get browser language
-function getBrowserLanguage(): 'en' | 'fr' {
-  try {
-    const lang = navigator.language.toLowerCase();
-    console.log('Browser language detected:', lang);
-    if (lang.startsWith('fr')) {
-      return 'fr';
-    }
-    return 'en';
-  } catch (e) {
-    console.error('Error detecting language:', e);
-    return 'en';
-  }
-}
+// IMPORTANT: Hardcode locale to 'en' to prevent minification issues
+// Dynamic locale detection was causing 'fr' to be minified to 'Vf' in production
+const FIXED_LOCALE = 'en';
 
-const detectedLocale = getBrowserLanguage();
-console.log('Detected locale for i18n:', detectedLocale);
-
-// Create i18n instance - using legacy mode for better compatibility
+// Create i18n instance with hardcoded English locale
 const i18n = createI18n({
-  locale: detectedLocale, // Will be 'en' or 'fr' only
+  locale: FIXED_LOCALE,
   fallbackLocale: 'en',
   legacy: true,
   globalInjection: true,
@@ -244,12 +230,6 @@ const i18n = createI18n({
   missingWarn: false,
   fallbackWarn: false
 });
-
-// Verify locale is correct after creation
-if (i18n.global.locale.value !== 'en' && i18n.global.locale.value !== 'fr') {
-  console.error('Invalid locale detected:', i18n.global.locale.value, '- forcing to "en"');
-  i18n.global.locale.value = 'en';
-}
 // Debug log the i18n instance
 console.log('i18n locale:', i18n.global.locale);
 console.log('i18n available locales:', i18n.global.availableLocales);
