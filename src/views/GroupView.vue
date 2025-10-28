@@ -128,7 +128,6 @@ import Avatar from '../components/Avatar.vue';
 import GroupRankingTable from '../components/GroupRankingTable.vue';
 import { groupService } from '../services/api';
 import { authService } from '../services/auth';
-import { socketService } from '../services/socket';
 import { formatDate } from '../utils/date';
 import type { GroupMember, GroupRanking } from '../types';
 import { useI18n } from 'vue-i18n';
@@ -257,9 +256,9 @@ async function loadGroupData() {
                 try {
                     const userId = joinRecord.user_id;
                     const response = await fetch(`${import.meta.env.VITE_API_1_URL}api/users/${userId}`, {
+                        credentials: 'include',
                         headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-                            'ngrok-skip-browser-warning': 'true'
+                            'Content-Type': 'application/json'
                         }
                     });
                     const userData = await response.json();
@@ -299,22 +298,16 @@ async function loadGroupData() {
 }
 
 // Store the callback reference for cleanup
-let rankingUpdateCallback: ((rankingData: any[]) => void) | null = null;
 
 // Setup websocket connection for real-time ranking updates
-function setupRankingWebSocket(currentGroupId: string) {
-    if (rankingUpdateCallback) {
-        socketService.unsubscribeFromGroupRank(rankingUpdateCallback);
-    }
+// Polling interval for ranking updates (replaces WebSocket)
+let rankingPollingInterval: number | null = null;
 
-    // Connect to socket if not already connected
-    if (!socketService.isSocketConnected()) {
-        socketService.connect();
-    }
+async function loadGroupRanking(currentGroupId: string) {
+    try {
+        const rankingData = await groupService.getGroupRanking(currentGroupId);
+        console.log('Loaded ranking data:', rankingData);
 
-    // Define the callback for ranking updates
-    rankingUpdateCallback = (rankingData: any[]) => {
-        console.log('Received ranking update:', rankingData);
         const unsortedRankings = rankingData.map((user: any) => ({
             userId: user._id || user.id,
             userName: user.name || user.nom || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
@@ -328,17 +321,38 @@ function setupRankingWebSocket(currentGroupId: string) {
             ...ranking,
             position: index + 1,
         }));
-    };
-    socketService.subscribeToGroupRank(currentGroupId, rankingUpdateCallback);
+    } catch (error) {
+        console.error('Error loading group ranking:', error);
+    }
 }
 
-// Cleanup websocket on component unmount
-function cleanupWebSocket() {
-    if (rankingUpdateCallback) {
-        socketService.unsubscribeFromGroupRank(rankingUpdateCallback);
-        rankingUpdateCallback = null;
+function setupRankingPolling(currentGroupId: string) {
+    // Clear any existing polling
+    stopRankingPolling();
+
+    // Load initial data
+    loadGroupRanking(currentGroupId);
+
+    // Poll every 10 seconds
+    rankingPollingInterval = window.setInterval(() => {
+        loadGroupRanking(currentGroupId);
+    }, 10000);
+}
+
+function stopRankingPolling() {
+    if (rankingPollingInterval) {
+        clearInterval(rankingPollingInterval);
+        rankingPollingInterval = null;
     }
-    socketService.disconnect();
+}
+
+// For backward compatibility, keep the old function names but use polling
+function setupRankingWebSocket(currentGroupId: string) {
+    setupRankingPolling(currentGroupId);
+}
+
+function cleanupWebSocket() {
+    stopRankingPolling();
 }
 
 async function handleJoinGroup() {

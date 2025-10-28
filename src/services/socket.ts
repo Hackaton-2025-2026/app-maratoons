@@ -17,14 +17,12 @@ class SocketService {
         console.log('Connecting to socket at:', SOCKET_URL);
 
         this.socket = io(SOCKET_URL, {
-            transports: ['polling'], // Use only polling for ngrok compatibility
+            transports: ['polling'],
             autoConnect: true,
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionAttempts: 5,
-            extraHeaders: {
-                'ngrok-skip-browser-warning': 'true'
-            }
+            withCredentials: true // Send cookies with requests
         });
 
         this.socket.on('connect', () => {

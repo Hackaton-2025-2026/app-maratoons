@@ -35,7 +35,30 @@ import Avatar from './Avatar.vue';
 import { authService } from '../services/auth';
 import type { GroupRanking } from '../types';
 import { useI18n } from 'vue-i18n';
-useI18n();
+
+const { t } = useI18n();
+
+// Inline fallback translations
+const fallback = {
+    leaderboard_title: "Group Leaderboard",
+    rank: "Rank",
+    user: "User",
+    points: "Points",
+    you_badge: "You"
+};
+
+// Safe translation function with fallback
+const $t = (key: string) => {
+    try {
+        const translated = t('group_ranking_table.' + key);
+        if (translated === 'group_ranking_table.' + key || translated.includes('group_ranking_table.')) {
+            return fallback[key as keyof typeof fallback] || key;
+        }
+        return translated;
+    } catch {
+        return fallback[key as keyof typeof fallback] || key;
+    }
+};
 
 defineProps<{
     rankings: GroupRanking[];
