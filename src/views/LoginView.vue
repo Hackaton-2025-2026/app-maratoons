@@ -2,8 +2,8 @@
     <div class="auth-view">
         <div class="auth-container">
             <div class="auth-card">
-                <h1>Welcome Back</h1>
-                <p class="subtitle">Sign in to your Marathoons account</p>
+                <h1>{{ $t('login_view.welcome_back_title') }}</h1>
+                <p class="subtitle">{{ $t('login_view.subtitle') }}</p>
 
                 <form @submit.prevent="handleLogin" class="auth-form">
                     <div v-if="error" class="error-message">
@@ -11,42 +11,43 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="email">Email</label>
+                        <label for="email">{{ $t('login_view.email_label') }}</label>
                         <input
                             id="email"
                             v-model="email"
                             type="email"
-                            placeholder="Enter your email"
+                            :placeholder="$t('login_view.email_placeholder')"
                             required
                             autocomplete="email"
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Password</label>
+                        <label for="password">{{ $t('login_view.password_label') }}</label>
                         <input
                             id="password"
                             v-model="password"
                             type="password"
-                            placeholder="Enter your password"
+                            :placeholder="$t('login_view.password_placeholder')"
                             required
                             autocomplete="current-password"
                         />
                     </div>
 
                     <button type="submit" class="btn-primary" :disabled="loading">
-                        {{ loading ? 'Signing in...' : 'Sign In' }}
+                        {{ loading ? $t('login_view.signing_in_button') : $t('login_view.sign_in_button') }}
                     </button>
                 </form>
 
                 <div class="auth-footer">
-                    <p>Don't have an account? <router-link to="/register">Sign up</router-link></p>
+                    <p>{{ $t('login_view.dont_have_account') }} <router-link to="/register">{{ $t('login_view.sign_up_link') }}</router-link></p>
                 </div>
 
-                <div class="demo-credentials">
-                    <p><strong>Demo Accounts:</strong></p>
-                    <p>Admin: john@example.com / password123</p>
-                    <p>User: jane@example.com / password123</p>
+                <!-- Only show demo credentials in mock mode -->
+                <div v-if="useMock" class="demo-credentials">
+                    <p><strong>{{ $t('login_view.demo_accounts_title') }}</strong></p>
+                    <p>{{ $t('login_view.demo_admin_credentials') }}</p>
+                    <p>{{ $t('login_view.demo_user_credentials') }}</p>
                 </div>
             </div>
         </div>
@@ -57,8 +58,13 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../services/auth';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
+const { t } = useI18n();
+
+// Check if mock mode is enabled
+const useMock = import.meta.env.VITE_USE_MOCK === 'true';
 
 const email = ref('');
 const password = ref('');
@@ -67,7 +73,7 @@ const error = ref('');
 
 async function handleLogin() {
     if (!email.value || !password.value) {
-        error.value = 'Please fill in all fields';
+        error.value = t('login_view.error_fill_all_fields');
         return;
     }
 
@@ -84,7 +90,7 @@ async function handleLogin() {
         router.push('/');
     } catch (err: any) {
         console.error('Login error:', err);
-        error.value = err.response?.data?.error || 'Login failed. Please try again.';
+        error.value = err.response?.data?.error || t('login_view.error_login_failed');
     } finally {
         loading.value = false;
     }

@@ -1,29 +1,28 @@
 <template>
     <div class="races-view">
         <div class="header">
-            <h1>Marathon Races</h1>
+            <h1>{{ $t('races_view.marathon_races_title') }}</h1>
             <div class="filters">
-                <button v-for="filter in filters" :key="filter" :class="{ active: activeFilter === filter }"
-                    @click="activeFilter = filter">
-                    {{ filter }}
+                <button v-for="filterKey in filters" :key="filterKey" :class="{ active: activeFilter === filterKey }"
+                    @click="activeFilter = filterKey">
+                    {{ $t('races_view.filter_' + filterKey) }}
                 </button>
             </div>
         </div>
 
-        <div v-if="loading" class="loading">Loading races...</div>
-        <div v-else-if="error" class="error">{{ error }}</div>
+        <div v-if="loading" class="loading">{{ $t('races_view.loading_races') }}</div>
+        <div v-else-if="error" class="error">{{ $t('races_view.error_loading_races') }}</div>
 
         <div v-else class="races-grid">
             <RaceCard v-for="race in filteredRaces" :key="race.id" :race="race" @click="goToRace" />
         </div>
 
         <div v-if="pagination.totalPages > 1" class="pagination">
-            <button :disabled="pagination.page === 1" @click="loadPage(pagination.page - 1)">
-                Previous
-            </button>
-            <span>Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+                            <button :disabled="pagination.page === 1" @click="loadPage(pagination.page - 1)">
+                                {{ $t('races_view.previous_button') }}
+                            </button>            <span>{{ $t('races_view.page_text') }} {{ pagination.page }} {{ $t('races_view.of_text') }} {{ pagination.totalPages }}</span>
             <button :disabled="pagination.page === pagination.totalPages" @click="loadPage(pagination.page + 1)">
-                Next
+                {{ $t('races_view.next_button') }}
             </button>
         </div>
     </div>
@@ -35,13 +34,16 @@ import { useRouter } from 'vue-router';
 import RaceCard from '../components/RaceCard.vue';
 import { raceService } from '../services/api';
 import type { Race } from '../types';
+import { getRaceStatus } from '../utils/date';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
+const { t } = useI18n(); // Use useI18n
 const loading = ref(false);
 const error = ref('');
 const races = ref<Race[]>([]);
-const activeFilter = ref<string>('All');
-const filters = ['All', 'Live', 'Upcoming', 'Past'];
+const activeFilter = ref<string>('all');
+const filters = ['all', 'live', 'upcoming', 'past'];
 
 const pagination = ref({
     page: 1,
@@ -51,15 +53,28 @@ const pagination = ref({
 });
 
 const filteredRaces = computed(() => {
-    if (activeFilter.value === 'All') return races.value;
+    console.log('Active Filter:', activeFilter.value);
+    let filtered = races.value;
 
-    const filterMap: Record<string, string> = {
-        'Live': 'ongoing',
-        'Upcoming': 'future',
-        'Past': 'past',
-    };
+    // Apply status filter
+    if (activeFilter.value !== 'all') {
+        const filterMap: Record<string, 'current' | 'future' | 'past'> = {
+            'live': 'current',
+            'upcoming': 'future',
+            'past': 'past',
+        };
 
-    return races.value.filter(race => race.status === filterMap[activeFilter.value]);
+        filtered = races.value.filter(race => {
+            const raceStatus = getRaceStatus(race.startDate);
+            console.log(`Filtering race ${race.name}: computed status=${raceStatus}, filter=${filterMap[activeFilter.value]}`);
+            return raceStatus === filterMap[activeFilter.value];
+        });
+    }
+
+    // Apply client-side pagination
+    const start = (pagination.value.page - 1) * pagination.value.pageSize;
+    const end = start + pagination.value.pageSize;
+    return filtered.slice(start, end);
 });
 
 async function loadRaces() {
@@ -67,12 +82,18 @@ async function loadRaces() {
     error.value = '';
 
     try {
-        const response = await raceService.getRaces(pagination.value.page, pagination.value.pageSize);
-        races.value = response.data;
-        pagination.value.total = response.total;
-        pagination.value.totalPages = response.totalPages;
+        // API 2 returns all races, no pagination on backend
+        const allRaces = await raceService.getRaces();
+        races.value = allRaces;
+
+        // Calculate pagination on client-side
+        pagination.value.total = allRaces.length;
+        pagination.value.totalPages = Math.ceil(allRaces.length / pagination.value.pageSize);
+
+        console.log('Loaded races:', races.value);
+        console.log('Pagination:', pagination.value);
     } catch (err) {
-        error.value = 'Failed to load races. Please try again.';
+        error.value = t('races_view.error_loading_races');
         console.error('Error loading races:', err);
     } finally {
         loading.value = false;
@@ -81,7 +102,7 @@ async function loadRaces() {
 
 function loadPage(page: number) {
     pagination.value.page = page;
-    loadRaces();
+    // No need to reload races, pagination is client-side
 }
 
 function goToRace(raceId: string) {
@@ -106,7 +127,7 @@ onMounted(() => {
 
 .header h1 {
     margin: 0 0 20px 0;
-    color: #2c3e50;
+    color: var(--text-primary);
     font-size: 2rem;
 }
 
@@ -118,10 +139,10 @@ onMounted(() => {
 
 .filters button {
     padding: 8px 20px;
-    border: 2px solid #ecf0f1;
+    border: 2px solid var(--border-color);
     border-radius: 24px;
-    background: white;
-    color: #7f8c8d;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;

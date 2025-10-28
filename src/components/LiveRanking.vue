@@ -4,7 +4,7 @@
             <div v-confetti="{ particleCount: 200, force: 0.3, duration: 4000 }" class="confetti-origin" />
         </div>
         <div class="header">
-            <h3>Live Rankings</h3>
+            <h3>{{ $t('live_ranking.title') }}</h3>
             <div class="progress-info">
                 <span class="km-indicator">{{ currentKm }} / {{ totalKm }} km</span>
                 <div class="progress-bar">
@@ -17,7 +17,7 @@
 
 
             </div>
-            <div class="last-update">Last update: {{ formattedLastUpdate }}</div>
+            <div class="last-update">{{ $t('live_ranking.last_update') }}: {{ formattedLastUpdate }}</div>
         </div>
 
         <div class="rankings-list">
@@ -36,7 +36,7 @@
                 <div class="runner-info">
                     <span class="bib">{{ ranking.bibNumber }}</span>
                     <span class="name">{{ ranking.runnerName }}</span>
-                    <span v-if="ranking.position === 1 && wasNewLeader(ranking.runnerId)" class="leader-badge">👑 New Leader!</span>
+                    <span v-if="ranking.position === 1 && wasNewLeader(ranking.runnerId)" class="leader-badge">👑 {{ $t('live_ranking.new_leader') }}</span>
                 </div>
                 <div class="stats">
                     <span class="km">{{ ranking.currentKm }} km</span>

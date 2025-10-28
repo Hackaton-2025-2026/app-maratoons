@@ -1,33 +1,33 @@
 <template>
     <div class="group-view">
         <div class="back-button" @click="goBack">
-            ← Back to My Groups
+            {{ $t('group_view.back_to_my_groups') }}
         </div>
 
         <div class="header">
-            <h1>{{ groupDetails?.name || 'Group' }}</h1>
-            <button v-if="currentUserIsAdmin" class="edit-group-button" @click="openEditModal" title="Edit group">
-                ✏️ Edit
+            <h1>{{ groupDetails?.name || $t('group_view.group_fallback_name') }}</h1>
+            <button v-if="currentUserIsAdmin" class="edit-group-button" @click="openEditModal" :title="$t('group_view.edit_group_title')">
+                {{ $t('group_view.edit_group_button') }}
             </button>
         </div>
 
-        <div v-if="loading" class="loading">Loading group data...</div>
-        <div v-else-if="error" class="error">{{ error }}</div>
+        <div v-if="loading" class="loading">{{ $t('group_view.loading_group_data') }}</div>
+        <div v-else-if="error" class="error">{{ $t('group_view.error_loading_group_data') }}</div>
 
         <template v-else>
             <div class="content-grid">
                 <div class="main-content">
-                    <GroupRankingTable :rankings="rankings" />
+                    <GroupRankingTable :rankings="rankings" class="mb-4" />
 
                     <div class="section">
-                        <h2>Members</h2>
+                        <h2>{{ $t('group_view.members_title') }}</h2>
                         <div class="members-list">
                             <div v-for="member in members" :key="member.id" class="member-item">
-                                <Avatar :firstName="member.firstName" :size="48" />
+                                <Avatar :name="member.nom" :size="48" />
                                 <div class="member-info">
                                     <div class="member-name">
-                                        {{ member.firstName }} {{ member.lastName }}
-                                        <span v-if="member.isAdmin" class="admin-badge">Admin</span>
+                                        {{ member.nom }}
+                                        <span v-if="member.isAdmin" class="admin-badge">{{ $t('group_view.admin_badge') }}</span>
                                     </div>
                                     <div class="member-meta">
                                         {{ member.email }}
@@ -37,7 +37,7 @@
                                     </div>
                                 </div>
                                 <div v-if="currentUserIsAdmin && !member.isAdmin && member.id !== currentUser?.id" class="member-actions">
-                                    <button class="ban-hammer-button" @click="handleBanMember(member.id)" title="Ban user from group">
+                                    <button class="ban-hammer-button" @click="handleBanMember(member.id)" :title="$t('group_view.ban_user_title')">
                                         🔨
                                     </button>
                                 </div>
@@ -48,19 +48,19 @@
 
                 <div class="sidebar">
                     <div class="section">
-                        <h3>Group Actions</h3>
+                        <h3>{{ $t('group_view.group_actions_title') }}</h3>
                         <div class="actions-list">
                             <button class="action-button" @click="handleShareGroup">
-                                📤 Share Group
+                                {{ $t('group_view.share_group_button') }}
                             </button>
                             <button v-if="currentUserIsAdmin" class="action-button danger" @click="handleResetPoints">
-                                🔄 Reset Points
+                                {{ $t('group_view.reset_points_button') }}
                             </button>
                             <button v-if="currentUserIsAdmin" class="action-button danger" @click="handleDeleteGroup">
-                                Delete Group
+                                {{ $t('group_view.delete_group_button') }}
                             </button>
                             <button class="action-button danger" @click="handleLeaveGroup">
-                                Leave Group
+                                {{ $t('group_view.leave_group_button') }}
                             </button>
                         </div>
                     </div>
@@ -70,14 +70,14 @@
 
         <div v-if="showJoinModal" class="modal-overlay" @click="showJoinModal = false">
             <div class="modal" @click.stop>
-                <h2>Join Group</h2>
-                <input v-model="joinCode" type="text" placeholder="Enter group code" class="input" />
+                <h2>{{ $t('group_view.join_group_modal_title') }}</h2>
+                <input v-model="joinCode" type="text" :placeholder="$t('group_view.enter_group_code_placeholder')" class="input" />
                 <div class="modal-actions">
                     <button class="action-button secondary" @click="showJoinModal = false">
-                        Cancel
+                        {{ $t('group_view.cancel_button') }}
                     </button>
                     <button class="action-button" @click="handleJoinGroup">
-                        Join
+                        {{ $t('group_view.join_button') }}
                     </button>
                 </div>
             </div>
@@ -85,17 +85,17 @@
 
         <div v-if="showShareModal" class="modal-overlay" @click="showShareModal = false">
             <div class="modal" @click.stop>
-                <h2>Share Group</h2>
-                <p class="share-description">Share this code with friends to invite them to {{ groupDetails?.name }}</p>
+                <h2>{{ $t('group_view.share_group_modal_title') }}</h2>
+                <p class="share-description">{{ $t('group_view.share_description', { groupName: groupDetails?.name }) }}</p>
                 <div class="share-code-container">
                     <input v-model="shareCode" type="text" readonly class="share-code-input" />
                     <button class="copy-button" @click="copyShareCode">
-                        {{ copied ? '✓ Copied!' : '📋 Copy' }}
+                        {{ copied ? $t('group_view.copied_button') : $t('group_view.copy_button') }}
                     </button>
                 </div>
                 <div class="modal-actions">
                     <button class="action-button" @click="showShareModal = false">
-                        Close
+                        {{ $t('group_view.close_button') }}
                     </button>
                 </div>
             </div>
@@ -103,17 +103,17 @@
 
         <div v-if="showEditModal" class="modal-overlay" @click="showEditModal = false">
             <div class="modal" @click.stop>
-                <h2>Edit Group</h2>
+                <h2>{{ $t('group_view.edit_group_modal_title') }}</h2>
                 <div class="form-group">
-                    <label for="group-name">Group Name</label>
-                    <input id="group-name" v-model="editGroupName" type="text" class="input" placeholder="Enter group name" />
+                    <label for="group-name">{{ $t('group_view.group_name_label') }}</label>
+                    <input id="group-name" v-model="editGroupName" type="text" class="input" :placeholder="$t('group_view.enter_group_name_placeholder')" />
                 </div>
                 <div class="modal-actions">
                     <button class="action-button secondary" @click="showEditModal = false">
                         Cancel
                     </button>
                     <button class="action-button" @click="handleSaveGroupEdit">
-                        Save Changes
+                        {{ $t('group_view.save_changes_button') }}
                     </button>
                 </div>
             </div>
@@ -122,23 +122,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Avatar from '../components/Avatar.vue';
 import GroupRankingTable from '../components/GroupRankingTable.vue';
 import { groupService } from '../services/api';
 import { authService } from '../services/auth';
+import { socketService } from '../services/socket';
 import { formatDate } from '../utils/date';
-import { mockGroups } from '../services/mockData';
 import type { GroupMember, GroupRanking } from '../types';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(false);
 const error = ref('');
 const members = ref<GroupMember[]>([]);
 const rankings = ref<GroupRanking[]>([]);
+const groupDetails = ref<any>(null);
 const showJoinModal = ref(false);
 const joinCode = ref('');
 const showShareModal = ref(false);
@@ -146,28 +149,17 @@ const shareCode = ref('');
 const copied = ref(false);
 const showEditModal = ref(false);
 const editGroupName = ref('');
-
-// Get current user
 const currentUser = computed(() => authService.getCurrentUser());
-
-// Get group ID from route parameter
 const groupId = computed(() => {
     return route.params.id as string;
-});
-
-// Get group details
-const groupDetails = computed(() => {
-    return mockGroups.find(g => g.id === groupId.value);
 });
 
 // Check if current user is admin in THIS specific group
 const currentUserIsAdmin = computed(() => {
     const user = currentUser.value;
-    if (!user) return false;
+    if (!user || !groupDetails.value) return false;
 
-    // Check if user is admin in this specific group by looking at the members list
-    const member = members.value.find(m => m.id === user.id);
-    return member?.isAdmin || false;
+    return user.id === groupDetails.value.owner_id;
 });
 
 async function loadGroupData() {
@@ -176,13 +168,53 @@ async function loadGroupData() {
 
     try {
         const currentGroupId = groupId.value;
-        const [membersData, rankingsData] = await Promise.all([
-            groupService.getGroupMembers(currentGroupId),
-            groupService.getGroupRanking(currentGroupId),
-        ]);
+        groupDetails.value = await groupService.getGroupById(currentGroupId);
 
-        members.value = membersData;
-        rankings.value = rankingsData;
+        if (!groupDetails.value) {
+            error.value = 'Group not found';
+            loading.value = false;
+            return;
+        }
+
+        const membersData = await groupService.getGroupMembers(currentGroupId);
+        const membersWithUserData = await Promise.all(
+            membersData.map(async (joinRecord: any) => {
+                try {
+                    const userId = joinRecord.user_id;
+                    const response = await fetch(`${import.meta.env.VITE_API_1_URL}api/users/${userId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    });
+                    const userData = await response.json();
+
+                    return {
+                        id: userData._id || userData.id,
+                        nom: userData.nom || 'Unknown User',
+                        email: userData.email || '',
+                        points: userData.solde || 0,
+                        joinedAt: joinRecord.createdAt,
+                        isAdmin: (userData._id || userData.id) === groupDetails.value.owner_id,
+                        groupId: currentGroupId,
+                    };
+                } catch (err) {
+                    console.error('Error fetching user data:', err);
+                    return {
+                        id: joinRecord.user_id,
+                        nom: 'Unknown User',
+                        email: '',
+                        points: 0,
+                        joinedAt: joinRecord.createdAt,
+                        isAdmin: false,
+                        groupId: currentGroupId,
+                    };
+                }
+            })
+        );
+
+        members.value = membersWithUserData;
+        setupRankingWebSocket(currentGroupId);
     } catch (err) {
         error.value = 'Failed to load group data. Please try again.';
         console.error('Error loading group data:', err);
@@ -191,27 +223,68 @@ async function loadGroupData() {
     }
 }
 
+// Store the callback reference for cleanup
+let rankingUpdateCallback: ((rankingData: any[]) => void) | null = null;
+
+// Setup websocket connection for real-time ranking updates
+function setupRankingWebSocket(currentGroupId: string) {
+    if (rankingUpdateCallback) {
+        socketService.unsubscribeFromGroupRank(rankingUpdateCallback);
+    }
+
+    // Connect to socket if not already connected
+    if (!socketService.isSocketConnected()) {
+        socketService.connect();
+    }
+
+    // Define the callback for ranking updates
+    rankingUpdateCallback = (rankingData: any[]) => {
+        console.log('Received ranking update:', rankingData);
+        const unsortedRankings = rankingData.map((user: any) => ({
+            userId: user._id || user.id,
+            userName: user.name || user.nom || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            totalPoints: user.solde || 0,
+            position: 0,
+            groupId: groupId.value,
+        }));
+
+        const sortedRankings = unsortedRankings.sort((a, b) => b.totalPoints - a.totalPoints);
+        rankings.value = sortedRankings.map((ranking, index) => ({
+            ...ranking,
+            position: index + 1,
+        }));
+    };
+    socketService.subscribeToGroupRank(currentGroupId, rankingUpdateCallback);
+}
+
+// Cleanup websocket on component unmount
+function cleanupWebSocket() {
+    if (rankingUpdateCallback) {
+        socketService.unsubscribeFromGroupRank(rankingUpdateCallback);
+        rankingUpdateCallback = null;
+    }
+    socketService.disconnect();
+}
+
 async function handleJoinGroup() {
     if (!joinCode.value.trim()) {
-        alert('Please enter a group code');
+        alert(t('group_view.alert_enter_group_code'));
         return;
     }
 
     try {
-        await groupService.joinGroup(groupId.value, joinCode.value);
+        await groupService.joinGroup(joinCode.value);
         showJoinModal.value = false;
         joinCode.value = '';
         await loadGroupData();
     } catch (err) {
         console.error('Error joining group:', err);
-        alert('Failed to join group. Please check the code and try again.');
+        alert(t('group_view.alert_error_joining_group'));
     }
 }
 
 function handleShareGroup() {
-    // Generate a share code for the group (in real app, this would come from the API)
-    const groupName = groupDetails.value?.name || 'Group';
-    shareCode.value = `${groupId.value.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    shareCode.value = groupDetails.value?.code || '';
     showShareModal.value = true;
     copied.value = false;
 }
@@ -223,24 +296,21 @@ function openEditModal() {
 
 async function handleSaveGroupEdit() {
     if (!editGroupName.value.trim()) {
-        alert('Please enter a group name');
+        alert(t('group_view.alert_enter_group_name'));
         return;
     }
 
     try {
-        // In a real app, this would call the API
-        // await groupService.updateGroup(groupId.value, { name: editGroupName.value });
-
-        // Update the local group details (in real app, this would be reloaded from API)
+        await groupService.updateGroup(groupId.value, { name: editGroupName.value });
         if (groupDetails.value) {
             groupDetails.value.name = editGroupName.value;
         }
 
         showEditModal.value = false;
-        alert('Group updated successfully!');
+        alert(t('group_view.alert_group_updated_success'));
     } catch (err) {
         console.error('Error updating group:', err);
-        alert('Failed to update group. Please try again.');
+        alert(t('group_view.alert_error_updating_group'));
     }
 }
 
@@ -253,55 +323,51 @@ async function copyShareCode() {
         }, 2000);
     } catch (err) {
         console.error('Error copying to clipboard:', err);
-        // Fallback for browsers that don't support clipboard API
         alert(`Share code: ${shareCode.value}`);
     }
 }
 
 async function handleDeleteGroup() {
-    if (!confirm('⚠️ WARNING: Are you sure you want to DELETE this group? This action cannot be undone and will remove all data associated with this group.')) {
+    if (!confirm(t('group_view.delete_confirm_1'))) {
         return;
     }
 
     // Double confirmation for destructive action
-    if (!confirm('This will permanently delete the group and all its data. Type DELETE to confirm or cancel.')) {
+    if (!confirm(t('group_view.delete_confirm_2'))) {
         return;
     }
 
     try {
-        // In a real app, this would call the API
-        // await groupService.deleteGroup(groupId.value);
-        alert('Group deleted successfully!');
+        await groupService.deleteGroup(groupId.value);
+        alert(t('group_view.group_deleted_success'));
         router.push({ name: 'groups' });
     } catch (err) {
         console.error('Error deleting group:', err);
-        alert('Failed to delete group. Please try again.');
+        alert(t('group_view.error_deleting_group'));
     }
 }
 
 async function handleResetPoints() {
-    if (!confirm('⚠️ WARNING: Are you sure you want to RESET all points for this group? This action cannot be undone and will set all members\' points to 0.')) {
+    if (!confirm(t('group_view.reset_points_confirm_1'))) {
         return;
     }
 
     // Double confirmation for destructive action
-    if (!confirm('This will permanently reset all points. Type RESET to confirm or cancel.')) {
+    if (!confirm(t('group_view.reset_points_confirm_2'))) {
         return;
     }
 
     try {
-        // In a real app, this would call the API
-        // await groupService.resetGroupPoints(groupId.value);
-        alert('Group points reset successfully!');
-        await loadGroupData(); // Reload data to reflect changes
+        alert(t('group_view.points_reset_success'));
+        await loadGroupData();
     } catch (err) {
         console.error('Error resetting points:', err);
-        alert('Failed to reset points. Please try again.');
+        alert(t('group_view.error_resetting_points'));
     }
 }
 
 async function handleLeaveGroup() {
-    if (!confirm('Are you sure you want to leave this group?')) {
+    if (!confirm(t('group_view.leave_confirm'))) {
         return;
     }
 
@@ -310,12 +376,12 @@ async function handleLeaveGroup() {
         router.push({ name: 'groups' });
     } catch (err) {
         console.error('Error leaving group:', err);
-        alert('Failed to leave group. Please try again.');
+        alert(t('group_view.error_leaving_group'));
     }
 }
 
 async function handleBanMember(userId: string) {
-    if (!confirm('Are you sure you want to ban this member?')) {
+    if (!confirm(t('group_view.ban_member_confirm'))) {
         return;
     }
 
@@ -324,7 +390,7 @@ async function handleBanMember(userId: string) {
         await loadGroupData();
     } catch (err) {
         console.error('Error banning member:', err);
-        alert('Failed to ban member. Please try again.');
+        alert(t('group_view.error_banning_member'));
     }
 }
 
@@ -334,6 +400,10 @@ function goBack() {
 
 onMounted(() => {
     loadGroupData();
+});
+
+onUnmounted(() => {
+    cleanupWebSocket();
 });
 </script>
 
@@ -483,6 +553,10 @@ onMounted(() => {
     color: #e74c3c;
 }
 
+.mb-4 {
+    margin-bottom: 24px;
+}
+
 .content-grid {
     display: grid;
     grid-template-columns: 1fr 350px;
@@ -580,8 +654,10 @@ onMounted(() => {
     background: var(--bg-secondary);
     border-radius: 12px;
     padding: 32px;
-    max-width: 400px;
+    max-width: 500px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal h2 {
@@ -599,6 +675,14 @@ onMounted(() => {
     display: flex;
     gap: 12px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+@media (max-width: 480px) {
+    .share-code-container {
+        flex-direction: column;
+    }
 }
 
 .share-code-input {
@@ -624,6 +708,8 @@ onMounted(() => {
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
+    min-width: 100px;
+    flex-shrink: 0;
 }
 
 .copy-button:hover {

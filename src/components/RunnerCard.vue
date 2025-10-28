@@ -1,5 +1,5 @@
 <template>
-    <div class="runner-card" :class="{ selected: isSelected, disabled: !canBet }">
+    <div class="runner-card" :class="{ selected: placingBet, disabled: !canBet || hasExistingBet, 'bet-placed': hasExistingBet }">
         <div class="runner-info">
             <div class="bib-number">{{ runner.bibNumber }}</div>
             <div class="runner-details">
@@ -11,21 +11,29 @@
             </div>
         </div>
         <div class="points-section">
-            <div class="points">{{ runner.points }} pts</div>
-            <button v-if="canBet" class="bet-button" :class="{ selected: isSelected }" @click="$emit('bet', runner.id)">
-                {{ isSelected ? 'Selected' : 'Bet' }}
+            <div class="points">{{ runner.points }} {{ $t('runner_card.points_suffix') }}</div>
+            <button v-if="canBet" class="bet-button" :class="{ selected: placingBet }"
+                :disabled="hasExistingBet"
+                @click="$emit('bet', runner.id)">
+                {{ hasExistingBet ? $t('runner_card.bet_placed_button') : (placingBet ? $t('runner_card.selected_button') : $t('runner_card.bet_button')) }}
             </button>
+            <div v-else-if="hasExistingBet" class="bet-placed-message">
+                {{ $t('runner_card.bet_placed_message') }}
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import type { Runner } from '../types';
+import { useI18n } from 'vue-i18n';
+useI18n();
 
 defineProps<{
     runner: Runner;
     canBet: boolean;
-    isSelected?: boolean;
+    placingBet?: boolean; // Renamed from isSelected
+    hasExistingBet?: boolean; // New prop
 }>();
 
 defineEmits<{
@@ -132,5 +140,17 @@ defineEmits<{
     background: #95a5a6;
     cursor: not-allowed;
     transform: none;
+}
+
+.runner-card.bet-placed {
+    border-color: #27ae60;
+    background: #e6ffe6; /* Light green background */
+}
+
+.bet-placed-message {
+    font-weight: 600;
+    color: #27ae60;
+    text-align: center;
+    min-width: 100px; /* Ensure it takes up space */
 }
 </style>

@@ -1,5 +1,5 @@
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import type { User } from '../types';
+import { getRaceStatus } from '../utils/date';
 import {
   mockRaces,
   mockRaceDetails,
@@ -71,8 +71,8 @@ async function handleMockRequest(config: InternalAxiosRequestConfig): Promise<Ax
   console.log(`[MOCK API] ${method} ${url}`);
 
   try {
-    // POST /auth/login - User login
-    if (method === 'POST' && url === '/auth/login') {
+    // POST /api/users/login - User login (Backend format)
+    if (method === 'POST' && (url === '/api/users/login' || url === '/auth/login')) {
       const { email, password } = config.data;
 
       const user = mockUsers.find(u => u.email === email && u.password === password);
@@ -87,20 +87,23 @@ async function handleMockRequest(config: InternalAxiosRequestConfig): Promise<Ax
         });
       }
 
-      // Generate mock token
-      const token = `mock_token_${user.id}_${Date.now()}`;
+      // Generate mock token with user data encoded
+      const tokenPayload = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      };
+      const token = `mock_token_${user.id}_${Date.now()}.${btoa(JSON.stringify(tokenPayload))}`;
 
-      // Return user without password
-      const { password: _, ...userWithoutPassword } = user;
-
+      // Backend returns ONLY token (no user object)
       return createMockResponse(config, {
-        user: userWithoutPassword,
         token
       });
     }
 
-    // POST /auth/register - User registration
-    if (method === 'POST' && url === '/auth/register') {
+    // POST /api/users/register - User registration (Backend format)
+    if (method === 'POST' && (url === '/api/users/register' || url === '/auth/register')) {
       const { name, email, password } = config.data;
 
       // Check if user already exists
@@ -132,6 +135,7 @@ async function handleMockRequest(config: InternalAxiosRequestConfig): Promise<Ax
       // Return user without password
       const { password: _, ...userWithoutPassword } = newUser;
 
+      // Backend returns both user and token for registration
       return createMockResponse(config, {
         user: userWithoutPassword,
         token
@@ -144,6 +148,52 @@ async function handleMockRequest(config: InternalAxiosRequestConfig): Promise<Ax
         success: true,
         message: 'Logged out successfully'
       });
+    }
+
+    // GET /api/users - Get all users
+    if (method === 'GET' && url === '/api/users') {
+      const usersWithoutPasswords = mockUsers.map(({ password, ...user }) => user);
+      return createMockResponse(config, usersWithoutPasswords);
+    }
+
+    // GET /api/users/:id - Get user by ID
+    if (method === 'GET' && url.match(/^\/api\/users\/[^/]+$/)) {
+      const userId = extractPathParam(url, /^\/api\/users\/([^/]+)$/);
+      const user = mockUsers.find(u => u.id === userId);
+      if (!user) {
+        return Promise.reject({
+          response: {
+            status: 404,
+            statusText: 'Not Found',
+            data: { error: 'User not found' }
+          }
+        });
+      }
+      const { password, ...userWithoutPassword } = user;
+      return createMockResponse(config, userWithoutPassword);
+    }
+
+    // GET /api/users/me/bets - Get current user's bets
+    if (method === 'GET' && url === '/api/users/me/bets') {
+      // Mock return user bets
+      return createMockResponse(config, []);
+    }
+
+    // POST /api/users/me/bets - Create bet for current user
+    if (method === 'POST' && url === '/api/users/me/bets') {
+      const { bet_id, solde, position_runner } = config.data;
+      return createMockResponse(config, {
+        id: `bet_${Date.now()}`,
+        bet_id,
+        solde,
+        position_runner,
+        createdAt: new Date().toISOString()
+      }, 201);
+    }
+
+    // DELETE /api/users/me/bets/:betId - Delete user's bet
+    if (method === 'DELETE' && url.match(/^\/api\/users\/me\/bets\/[^/]+$/)) {
+      return createMockResponse(config, { message: 'Bet deleted successfully' });
     }
 
     // GET /races - List all races with pagination
@@ -288,6 +338,124 @@ async function handleMockRequest(config: InternalAxiosRequestConfig): Promise<Ax
       return createMockResponse(config, rankings);
     }
 
+    // GET /api/groups - Get all groups (Backend format)
+    if (method === 'GET' && url === '/api/groups') {
+      return createMockResponse(config, mockGroups);
+    }
+
+    // GET /api/groups/:id - Get group members (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/groups\/[^/]+$/)) {
+      const groupId = extractPathParam(url, /^\/api\/groups\/([^/]+)$/);
+      if (!groupId) {
+        throw new Error('Group ID not found');
+      }
+      const members = mockGroupMembers[groupId] || [];
+      return createMockResponse(config, members);
+    }
+
+    // POST /api/groups/create - Create a group (Backend format)
+    if (method === 'POST' && url === '/api/groups/create') {
+      const { name } = config.data;
+      const newGroup = {
+        id: `group-${Date.now()}`,
+        name,
+        code: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        createdAt: new Date().toISOString(),
+        memberCount: 1
+      };
+      return createMockResponse(config, newGroup, 201);
+    }
+
+    // POST /api/groups/join/:code - Join group by code (Backend format)
+    if (method === 'POST' && url.match(/^\/api\/groups\/join\/[^/]+$/)) {
+      const code = extractPathParam(url, /^\/api\/groups\/join\/([^/]+)$/);
+      // Find group with this code (simplified)
+      return createMockResponse(config, {
+        success: true,
+        message: 'Successfully joined the group',
+        code
+      });
+    }
+
+    // POST /api/groups/:id/leave - Leave a group (Backend format)
+    if (method === 'POST' && url.match(/^\/api\/groups\/[^/]+\/leave$/)) {
+      const groupId = extractPathParam(url, /^\/api\/groups\/([^/]+)\/leave$/);
+      if (!groupId) {
+        throw new Error('Group ID not found');
+      }
+      return createMockResponse(config, {
+        success: true,
+        message: 'Successfully left the group',
+        groupId
+      });
+    }
+
+    // POST /api/groups/:id/ban - Ban a member (Backend format)
+    if (method === 'POST' && url.match(/^\/api\/groups\/[^/]+\/ban$/)) {
+      const groupId = extractPathParam(url, /^\/api\/groups\/([^/]+)\/ban$/);
+      if (!groupId) {
+        throw new Error('Group ID not found');
+      }
+      const userToBan = config.data?.userToBan; // Backend uses 'userToBan' not 'userId'
+      if (!userToBan) {
+        throw new Error('userToBan not provided');
+      }
+      return createMockResponse(config, {
+        success: true,
+        message: 'User successfully banned',
+        userToBan
+      });
+    }
+
+    // GET /api/bets - Get all bets (Backend format)
+    if (method === 'GET' && url === '/api/bets') {
+      const allBets: any[] = [];
+      Object.values(mockBets).forEach(betGroup => {
+        allBets.push(...betGroup);
+      });
+      return createMockResponse(config, allBets);
+    }
+
+    // GET /api/bets/race/:raceId - Get bets by race (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/bets\/race\/[^/]+$/)) {
+      const raceId = extractPathParam(url, /^\/api\/bets\/race\/([^/]+)$/);
+      const raceBets: any[] = [];
+      Object.keys(mockBets).forEach(key => {
+        if (key.endsWith(`-${raceId}`)) {
+          raceBets.push(...mockBets[key]);
+        }
+      });
+      return createMockResponse(config, raceBets);
+    }
+
+    // GET /api/bets/runner/:runnerId - Get bets by runner (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/bets\/runner\/[^/]+$/)) {
+      const runnerId = extractPathParam(url, /^\/api\/bets\/runner\/([^/]+)$/);
+      const runnerBets: any[] = [];
+      Object.values(mockBets).forEach(betGroup => {
+        betGroup.forEach(bet => {
+          if (bet.runnerId === runnerId) {
+            runnerBets.push(bet);
+          }
+        });
+      });
+      return createMockResponse(config, runnerBets);
+    }
+
+    // POST /api/bets - Create bet (Backend format)
+    if (method === 'POST' && url === '/api/bets') {
+      const { bet_id, solde, position_runner } = config.data;
+      return createMockResponse(config, {
+        id: `bet_${Date.now()}`,
+        bet_id,
+        solde,
+        cote: 2.5, // Mock odds
+        position_runner,
+        createdAt: new Date().toISOString()
+      }, 201);
+    }
+
+    // OLD ROUTES (Keep for backward compatibility)
     // POST /group/{groupId}/join - Join a group
     if (method === 'POST' && url.match(/^\/group\/[^/]+\/join$/)) {
       const groupId = extractPathParam(url, /^\/group\/([^/]+)\/join$/);
@@ -365,6 +533,230 @@ async function handleMockRequest(config: InternalAxiosRequestConfig): Promise<Ax
           points: runner?.points || 10,
           placedAt: new Date().toISOString()
         }
+      });
+    }
+
+    // ==================== API 2 ROUTES (api-scoring) ====================
+
+    // GET /api/races - Get all races with filtering (Backend format)
+    if (method === 'GET' && url.startsWith('/api/races') && !url.match(/\/api\/races\/\d+/)) {
+      const params = parseQueryParams(url);
+      const status = params.status; // 'past', 'current', 'future'
+      const sort = params.sort; // 'date_asc', 'date_desc'
+
+      let filteredRaces = [...mockRaces];
+
+      // Apply status filter
+      if (status) {
+        filteredRaces = filteredRaces.filter(race => getRaceStatus(race.startDate) === status);
+      }
+
+      // Apply sorting
+      if (sort === 'date_asc') {
+        filteredRaces.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+      } else if (sort === 'date_desc') {
+        filteredRaces.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+      }
+
+      return createMockResponse(config, filteredRaces);
+    }
+
+    // GET /api/races/{id} - Get race details (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/races\/\d+$/)) {
+      const raceId = extractPathParam(url, /^\/api\/races\/(\d+)$/);
+      if (!raceId) {
+        throw new Error('Race ID not found');
+      }
+
+      const raceDetails = mockRaceDetails[raceId];
+      if (!raceDetails) {
+        const race = mockRaces.find(r => r.id === raceId);
+        if (race) {
+          return createMockResponse(config, {
+            ...race,
+            totalRunners: 100,
+            weather: 'Clear skies'
+          });
+        }
+        throw new Error('Race not found');
+      }
+
+      return createMockResponse(config, raceDetails);
+    }
+
+    // GET /api/races/{id}/results - Get race results/rankings (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/races\/\d+\/results$/)) {
+      const raceId = extractPathParam(url, /^\/api\/races\/(\d+)\/results$/);
+      if (!raceId) {
+        throw new Error('Race ID not found');
+      }
+
+      const progress = mockRaceProgress[raceId];
+      if (!progress) {
+        return createMockResponse(config, []);
+      }
+
+      // Transform rankings to results format
+      const results = progress.rankings.map((ranking, index) => ({
+        id: index + 1,
+        runner: {
+          id: ranking.runnerId,
+          firstName: ranking.runnerName.split(' ')[0] || '',
+          lastName: ranking.runnerName.split(' ').slice(1).join(' ') || '',
+        },
+        race: {
+          id: parseInt(raceId),
+          name: mockRaceDetails[raceId]?.name || 'Unknown Race'
+        },
+        time: ranking.estimatedTime || '00:00:00',
+        runnerRank: ranking.position,
+        hasFinished: progress.currentKm >= progress.totalKm,
+        createAt: progress.lastUpdate,
+        updatedAt: progress.lastUpdate
+      }));
+
+      return createMockResponse(config, results);
+    }
+
+    // GET /api/races/{id}/km - Get race kilometer progress (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/races\/\d+\/km$/)) {
+      const raceId = extractPathParam(url, /^\/api\/races\/(\d+)\/km$/);
+      if (!raceId) {
+        throw new Error('Race ID not found');
+      }
+
+      const progress = mockRaceProgress[raceId];
+      if (!progress) {
+        return createMockResponse(config, { kilometer: 0 });
+      }
+
+      return createMockResponse(config, { kilometer: progress.currentKm });
+    }
+
+    // GET /api/runners - Get all runners (Backend format)
+    if (method === 'GET' && url === '/api/runners') {
+      const allRunners: any[] = [];
+      Object.entries(mockRunners).forEach(([raceId, runners]) => {
+        runners.forEach(runner => {
+          allRunners.push({
+            id: runner.id,
+            race: {
+              id: parseInt(raceId),
+              name: mockRaceDetails[raceId]?.name || 'Unknown Race'
+            },
+            firstName: runner.name.split(' ')[0] || '',
+            lastName: runner.name.split(' ').slice(1).join(' ') || '',
+            nationality: runner.country || 'Unknown',
+            bibNumber: runner.bibNumber,
+            createAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        });
+      });
+      return createMockResponse(config, allRunners);
+    }
+
+    // GET /api/runners/{id} - Get runner by ID (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/runners\/\d+$/)) {
+      const runnerId = extractPathParam(url, /^\/api\/runners\/(\d+)$/);
+      if (!runnerId) {
+        throw new Error('Runner ID not found');
+      }
+
+      // Find runner across all races
+      let foundRunner: any = null;
+      let foundRaceId: string | null = null;
+
+      Object.entries(mockRunners).forEach(([raceId, runners]) => {
+        const runner = runners.find(r => r.id === runnerId);
+        if (runner) {
+          foundRunner = runner;
+          foundRaceId = raceId;
+        }
+      });
+
+      if (!foundRunner || !foundRaceId) {
+        throw new Error('Runner not found');
+      }
+
+      return createMockResponse(config, {
+        id: foundRunner.id,
+        race: {
+          id: parseInt(foundRaceId),
+          name: mockRaceDetails[foundRaceId]?.name || 'Unknown Race'
+        },
+        firstName: foundRunner.name.split(' ')[0] || '',
+        lastName: foundRunner.name.split(' ').slice(1).join(' ') || '',
+        nationality: foundRunner.country || 'Unknown',
+        bibNumber: foundRunner.bibNumber,
+        createAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    // GET /api/runners/{id}/results - Get runner's results (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/runners\/\d+\/results$/)) {
+      const runnerId = extractPathParam(url, /^\/api\/runners\/(\d+)\/results$/);
+      if (!runnerId) {
+        throw new Error('Runner ID not found');
+      }
+
+      const results: any[] = [];
+      // Mock: return empty or generate sample results
+      return createMockResponse(config, results);
+    }
+
+    // GET /api/results - Get all results (Backend format)
+    if (method === 'GET' && url === '/api/results') {
+      const allResults: any[] = [];
+      Object.entries(mockRaceProgress).forEach(([raceId, progress]) => {
+        progress.rankings.forEach((ranking, index) => {
+          allResults.push({
+            id: `${raceId}-${index}`,
+            runner: {
+              id: ranking.runnerId,
+              firstName: ranking.runnerName.split(' ')[0] || '',
+              lastName: ranking.runnerName.split(' ').slice(1).join(' ') || '',
+            },
+            race: {
+              id: parseInt(raceId),
+              name: mockRaceDetails[raceId]?.name || 'Unknown Race'
+            },
+            time: ranking.estimatedTime || '00:00:00',
+            runnerRank: ranking.position,
+            hasFinished: progress.currentKm >= progress.totalKm,
+            createAt: progress.lastUpdate,
+            updatedAt: progress.lastUpdate
+          });
+        });
+      });
+      return createMockResponse(config, allResults);
+    }
+
+    // GET /api/results/{id} - Get result by ID (Backend format)
+    if (method === 'GET' && url.match(/^\/api\/results\/\d+$/)) {
+      const resultId = extractPathParam(url, /^\/api\/results\/(\d+)$/);
+      if (!resultId) {
+        throw new Error('Result ID not found');
+      }
+
+      // Mock single result
+      return createMockResponse(config, {
+        id: resultId,
+        runner: {
+          id: 'r1-1',
+          firstName: 'John',
+          lastName: 'Doe',
+        },
+        race: {
+          id: 1,
+          name: 'Paris Marathon 2024'
+        },
+        time: '02:15:30',
+        runnerRank: 1,
+        hasFinished: true,
+        createAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       });
     }
 

@@ -1,19 +1,19 @@
 <template>
     <div class="race-detail-view">
-        <div v-if="loading" class="loading">Loading race details...</div>
-        <div v-else-if="error" class="error">{{ error }}</div>
+        <div v-if="loading" class="loading">{{ $t('race_detail.loading_details') }}</div>
+        <div v-else-if="error" class="error">{{ $t('race_detail.error_loading_details') }}</div>
 
         <template v-else-if="raceDetails">
             <div class="back-button" @click="goBack">
-                ← Back to Races
+                {{ $t('race_detail.back_to_races') }}
             </div>
 
             <div class="race-header">
                 <div class="race-info">
                     <h1>{{ raceDetails.name }}</h1>
                     <div class="race-meta">
-                        <span class="status" :class="'status-' + raceDetails.status">
-                            {{ getRaceStatusLabel(raceDetails.status) }}
+                        <span class="status" :class="'status-' + (raceStatus === 'current' ? 'ongoing' : raceStatus)">
+                            {{ getRaceStatusLabel(raceDetails.startDate, t) }}
                         </span>
                         <span>{{ raceDetails.location }}</span>
                         <span>{{ formatDate(raceDetails.startDate) }}</span>
@@ -27,34 +27,38 @@
 
             <div class="content-grid">
                 <div class="main-content">
-                    <div v-if="raceDetails.status === 'ongoing'" class="section">
+                    <div v-if="raceStatus === 'current'" class="section">
                         <LiveRanking v-if="liveData" :rankings="liveData.rankings" :currentKm="liveData.currentKm"
                             :totalKm="liveData.totalKm" :lastUpdate="liveData.lastUpdate"
                             :userBetRunnerId="selectedRunnerId" />
                     </div>
 
-                    <Podium v-if="raceDetails.status === 'past' && liveData && liveData.rankings.length > 0"
+                    <Podium v-if="raceStatus === 'past' && liveData && liveData.rankings.length > 0"
                         class="podium-section"
                         :rankings="liveData.rankings"
                         @runnerClick="handleRunnerClick" />
 
                     <div class="section">
-                        <h2>{{ raceDetails.status === 'future' ? 'Place Your Bet' : 'Runners' }}</h2>
-                        <div v-if="loadingRunners" class="loading">Loading runners...</div>
+                        <h2>{{ raceStatus === 'future' ? $t('race_detail.place_your_bet') : $t('race_detail.runners') }}</h2>
+                        <div v-if="loadingRunners" class="loading">{{ $t('race_detail.loading_runners') }}</div>
                         <div v-else class="runners-list">
-                            <RunnerCard v-for="runner in runners" :key="runner.id" :runner="runner"
-                                :canBet="canPlaceBets" :isSelected="selectedRunnerId === runner.id" @bet="handleBet" />
+                            <template v-for="runner in paginatedRunners" :key="runner.id">
+                                <RunnerCard :runner="runner"
+                                    :canBet="canPlaceBets" :placingBet="selectedRunnerId === runner.id"
+                                    :hasExistingBet="hasExistingBetComputed(runner.id)"
+                                    @bet="handleBet" />
+                            </template>
                         </div>
 
                         <div v-if="runnersPagination.totalPages > 1" class="pagination">
                             <button :disabled="runnersPagination.page === 1"
                                 @click="loadRunnersPage(runnersPagination.page - 1)">
-                                Previous
+                                {{ $t('race_detail.previous') }}
                             </button>
-                            <span>Page {{ runnersPagination.page }} of {{ runnersPagination.totalPages }}</span>
+                            <span>{{ $t('race_detail.page') }} {{ runnersPagination.page }} {{ $t('race_detail.of') }} {{ runnersPagination.totalPages }}</span>
                             <button :disabled="runnersPagination.page === runnersPagination.totalPages"
                                 @click="loadRunnersPage(runnersPagination.page + 1)">
-                                Next
+                                {{ $t('race_detail.next') }}
                             </button>
                         </div>
                     </div>
@@ -62,29 +66,29 @@
 
                 <div class="sidebar">
                     <div class="section">
-                        <h3>Friends' Bets</h3>
-                        <div v-if="loadingBets" class="loading-small">Loading...</div>
+                        <h3>{{ $t('race_detail.friends_bets') }}</h3>
+                        <div v-if="loadingBets" class="loading-small">{{ $t('race_detail.loading') }}</div>
                         <div v-else-if="bets.length === 0" class="empty-state">
-                            No bets yet
+                            {{ $t('race_detail.no_bets_yet') }}
                         </div>
                         <div v-else class="bets-list">
                             <div v-for="bet in bets" :key="bet.userId" class="bet-item"
                                 :class="{ 'bet-leader': isRunnerLeading(bet.runnerId), 'bet-winner': isRunnerWinner(bet.runnerId) }">
-                                <Avatar :firstName="bet.userName" :size="32" />
+                                <Avatar :name="bet.userName" :size="32" />
                                 <div class="bet-info">
                                     <div class="user-name">{{ bet.userName }}</div>
                                     <div class="bet-details">
                                         {{ bet.runnerName }}
                                         <span v-if="bet.groups.length === 1">({{ bet.points }} pts)</span>
                                         <span v-if="isRunnerLeading(bet.runnerId)" class="leader-icon">👑</span>
-                                        <span v-if="getBetBadgeInfo(bet)" :class="getBetBadgeInfo(bet).class">
-                                            {{ getBetBadgeInfo(bet).text }}
+                                        <span v-if="getBetBadgeInfo(bet)" :class="getBetBadgeInfo(bet)!.class">
+                                            {{ getBetBadgeInfo(bet)!.text }}
                                         </span>
 
                                     </div>
                                     <div class="group-info">
-                                        <span v-if="bet.groups.length === 1">In {{ bet.groups[0].name }}</span>
-                                        <span v-else>In {{ bet.groups.length }} groups</span>
+                                        <span v-if="bet.groups.length === 1">{{ $t('race_detail.in_group', { groupName: bet.groups[0].name }) }}</span>
+                                        <span v-else>{{ $t('race_detail.in_groups', { count: bet.groups.length }) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -103,12 +107,15 @@ import LiveRanking from '../components/LiveRanking.vue';
 import Podium from '../components/Podium.vue';
 import RunnerCard from '../components/RunnerCard.vue';
 import Avatar from '../components/Avatar.vue';
-import { raceService, groupService, betService } from '../services/api';
-import { formatDate, getRaceStatusLabel } from '../utils/date';
+import { raceService, userBetService } from '../services/api';
+import { transformBackendResultToLiveRanking } from '../services/dataTransform';
+import { formatDate, getRaceStatusLabel, getRaceStatus, isRaceFinished } from '../utils/date';
 import type { RaceDetails, Runner, RaceProgress, UserBetInfo } from '../types';
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const loading = ref(false);
 const loadingRunners = ref(false);
@@ -120,6 +127,7 @@ const runners = ref<Runner[]>([]);
 const liveData = ref<RaceProgress | null>(null);
 const bets = ref<UserBetInfo[]>([]);
 const selectedRunnerId = ref<string>('');
+const userBetOnRunnerId = ref<string | null>(null);
 
 const runnersPagination = ref({
     page: 1,
@@ -128,11 +136,31 @@ const runnersPagination = ref({
     totalPages: 0,
 });
 
-const groupId = 'default-group';
+const raceStatus = computed(() => {
+    if (raceDetails.value) {
+        return getRaceStatus(raceDetails.value.startDate);
+    }
+    return null;
+});
+
+// Check if race is finished based on all runners' hasFinished status
+const raceFinished = ref(false);
+
 let liveUpdateInterval: number | null = null;
 
 const canPlaceBets = computed(() => {
-    return raceDetails.value?.status === 'future';
+    return raceStatus.value === 'future' && !userBetOnRunnerId.value;
+});
+
+const hasExistingBetComputed = computed(() => {
+    return (runnerId: string) => userBetOnRunnerId.value !== null && userBetOnRunnerId.value === runnerId;
+});
+
+// Paginated runners for display
+const paginatedRunners = computed(() => {
+    const start = (runnersPagination.value.page - 1) * runnersPagination.value.pageSize;
+    const end = start + runnersPagination.value.pageSize;
+    return runners.value.slice(start, end);
 });
 
 // Check if a runner is currently leading the race
@@ -143,9 +171,9 @@ function isRunnerLeading(runnerId: string): boolean {
     return liveData.value.rankings[0].runnerId === runnerId;
 }
 
-// Check if a runner is the winner of a past race
+// Check if a runner is the winner of a finished race
 function isRunnerWinner(runnerId: string): boolean {
-    if (raceDetails.value?.status !== 'past' || !liveData.value || !liveData.value.rankings || liveData.value.rankings.length === 0) {
+    if (!raceFinished.value || !liveData.value || !liveData.value.rankings || liveData.value.rankings.length === 0) {
         return false;
     }
     const winner = liveData.value.rankings.find(r => r.position === 1);
@@ -153,8 +181,8 @@ function isRunnerWinner(runnerId: string): boolean {
 }
 
 const getBetBadgeInfo = (bet: UserBetInfo) => {
-    const isLive = raceDetails.value?.status === 'ongoing';
-    const isPast = raceDetails.value?.status === 'past';
+    const isLive = raceStatus.value === 'current' && !raceFinished.value;
+    const isFinished = raceFinished.value;
     const isLeader = isRunnerLeading(bet.runnerId);
     const isWinner = isRunnerWinner(bet.runnerId);
 
@@ -162,8 +190,8 @@ const getBetBadgeInfo = (bet: UserBetInfo) => {
         const points = bet.points;
         const colorClass = isLeader ? 'green' : 'red';
         return { text: `${points} pts`, class: `points-badge ${colorClass}` };
-    } else if (isPast && isWinner) {
-        const points = liveData.value?.winningPoints || 0; // Use winningPoints for past races
+    } else if (isFinished && isWinner) {
+        const points = liveData.value?.winningPoints || 0; // Use winningPoints for finished races
         return { text: `+${points} pts`, class: 'points-badge green' };
     }
     return null; // No badge
@@ -172,23 +200,28 @@ const getBetBadgeInfo = (bet: UserBetInfo) => {
 async function loadRaceDetails() {
     loading.value = true;
     error.value = '';
+    userBetOnRunnerId.value = null; // Reset for new race
 
     try {
         const raceId = route.params.id as string;
         raceDetails.value = await raceService.getRaceDetails(raceId);
 
+        await loadMyBets();
+
+        console.log('Race details:', raceDetails.value);
+
         // Load runners first, as liveData might depend on it for winning points
         await loadRunners();
 
         // Load live data for ongoing races (with updates) and past races (for podium)
-        if (raceDetails.value.status === 'ongoing' || raceDetails.value.status === 'past') {
+        if (raceStatus.value === 'current' || raceStatus.value === 'past') {
             await loadLiveData(); // Now loadLiveData can safely use runners.value
         }
 
         await loadBets(); // Now loadBets can use liveData.value
 
         // Only start live updates for ongoing races
-        if (raceDetails.value.status === 'ongoing') {
+        if (raceStatus.value === 'current') {
                 startLiveUpdates();
             }
     } catch (err) {
@@ -199,19 +232,39 @@ async function loadRaceDetails() {
     }
 }
 
+async function loadMyBets() {
+    try {
+        const response = await userBetService.getMyBets();
+        console.log('My Bets API Response:', response); // Log the full response
+        const raceId = parseInt(route.params.id as string, 10);
+        console.log('Current Race ID:', raceId); // Log current race ID
+        const existingBet = response.find(bet => {
+            console.log('Checking bet:', bet.bet_id.race_id, 'against current race ID:', raceId);
+            return bet.bet_id.race_id === raceId;
+        });
+        if (existingBet) {
+            userBetOnRunnerId.value = String(existingBet.bet_id.runner_id);
+            console.log('Existing bet found for runner:', userBetOnRunnerId.value); // Log found runner ID
+        } else {
+            console.log('No existing bet found for this race.');
+        }
+    } catch (err) {
+        console.error('Error loading my bets:', err);
+    }
+}
+
 async function loadRunners() {
     loadingRunners.value = true;
 
     try {
         const raceId = route.params.id as string;
-        const response = await raceService.getRaceRunners(
-            raceId,
-            runnersPagination.value.page,
-            runnersPagination.value.pageSize
-        );
-        runners.value = response.data;
-        runnersPagination.value.total = response.total;
-        runnersPagination.value.totalPages = response.totalPages;
+        // Hybrid call: Gets runner details from API 2 + betting odds from API 1
+        const allRunners = await raceService.getRaceRunners(raceId);
+        runners.value = allRunners;
+
+        // Client-side pagination
+        runnersPagination.value.total = allRunners.length;
+        runnersPagination.value.totalPages = Math.ceil(allRunners.length / runnersPagination.value.pageSize);
 
         // Add mock runners if no real runners are found
         if (runners.value.length === 0) {
@@ -255,10 +308,38 @@ async function loadRunners() {
 async function loadLiveData() {
     try {
         const raceId = route.params.id as string;
-        liveData.value = await raceService.getRaceProgress(raceId);
+        const [progressData, resultsData] = await Promise.all([
+            raceService.getRaceProgress(raceId),
+            raceService.getRaceResults(raceId),
+        ]);
 
-        // Set winning points for past races based on the winner's points
-        if (raceDetails.value?.status === 'past' && liveData.value) {
+        // Transform backend results to LiveRanking format
+        const unsortedRankings = resultsData.map((result: any) =>
+            transformBackendResultToLiveRanking(result, progressData.kilometer)
+        );
+
+        // Sort rankings by currentKm (descending) - runner with most km is first
+        const sortedRankings = unsortedRankings.sort((a, b) => b.currentKm - a.currentKm);
+
+        // Recalculate positions based on sorted order
+        const rankingsWithPositions = sortedRankings.map((ranking, index) => ({
+            ...ranking,
+            position: index + 1, // Position 1 is the leader (most km)
+        }));
+
+        liveData.value = {
+            raceId: raceId,
+            currentKm: progressData.kilometer,
+            totalKm: raceDetails.value?.distance || 0,
+            rankings: rankingsWithPositions,
+            lastUpdate: new Date().toISOString(),
+        };
+
+        // Check if race is finished based on all runners' hasFinished status
+        raceFinished.value = isRaceFinished(resultsData);
+
+        // Set winning points for finished races based on the winner's points
+        if (raceFinished.value && liveData.value) {
             const winningRunnerId = liveData.value.rankings.find(r => r.position === 1)?.runnerId;
             if (winningRunnerId) {
                 // Find the winning runner from the loaded runners list
@@ -267,6 +348,12 @@ async function loadLiveData() {
                     liveData.value.winningPoints = winningRunner.points;
                 }
             }
+        }
+
+        // Stop live updates if race is finished
+        if (raceFinished.value && liveUpdateInterval) {
+            clearInterval(liveUpdateInterval);
+            liveUpdateInterval = null;
         }
     } catch (err) {
         console.error('Error loading live data:', err);
@@ -279,36 +366,36 @@ async function loadBets() {
     try {
         const raceId = route.params.id as string;
         bets.value = await raceService.getAllBetsForRace(raceId);
-
-        // Add mock bets for past races if no real bets are found
-        if (raceDetails.value?.status === 'past' && bets.value.length === 0) {
-            // Assuming liveData.value.rankings is available and has at least one runner
+        if (raceStatus.value === 'past' && bets.value.length === 0) {
             const winningRunnerId = liveData.value?.rankings.find(r => r.position === 1)?.runnerId;
             const winningRunnerName = liveData.value?.rankings.find(r => r.position === 1)?.runnerName;
-
+        
             const mockBets: UserBetInfo[] = [
                 {
                     userId: 'mock-user-1',
                     userName: 'Alice',
-                    runnerId: winningRunnerId || 'runner-1', // Bet on the winner if available
+                    runnerId: winningRunnerId || 'runner-1',
                     runnerName: winningRunnerName || 'Runner 1',
                     points: 100,
+                    placedAt: new Date().toISOString(),
                     groups: [{ id: 'group-a', name: 'Friends' }],
                 },
                 {
                     userId: 'mock-user-2',
                     userName: 'Bob',
-                    runnerId: 'runner-2', // Bet on a non-winner
+                    runnerId: 'runner-2',
                     runnerName: 'Runner 2',
                     points: 50,
+                    placedAt: new Date().toISOString(),
                     groups: [{ id: 'group-a', name: 'Friends' }],
                 },
                 {
                     userId: 'mock-user-3',
                     userName: 'Charlie',
-                    runnerId: winningRunnerId || 'runner-1', // Another bet on the winner
+                    runnerId: winningRunnerId || 'runner-1',
                     runnerName: winningRunnerName || 'Runner 1',
                     points: 120,
+                    placedAt: new Date().toISOString(),
                     groups: [{ id: 'group-b', name: 'Family' }],
                 },
             ];
@@ -323,20 +410,39 @@ async function loadBets() {
 
 function loadRunnersPage(page: number) {
     runnersPagination.value.page = page;
-    loadRunners();
+    // No need to reload, pagination is client-side
 }
 
 async function handleBet(runnerId: string) {
     if (!canPlaceBets.value) return;
 
+    // Prevent betting if a bet is already placed
+    if (userBetOnRunnerId.value) {
+        alert(t('race_detail.already_bet'));
+        return;
+    }
+
     try {
-        const raceId = route.params.id as string;
-        await betService.placeBet(raceId, runnerId);
+        const runner = runners.value.find(r => r.id === runnerId);
+        if (!runner) return;
+
+        // Check if runner has a betId (from Bets collection in API 1)
+        if (!runner.betId) {
+            console.error('No betting information available for this runner');
+            alert('Betting is not available for this runner. Please try again later.');
+            return;
+        }
+
+        await userBetService.createMyBet({
+            bet_id: runner.betId, // Use the Bets document ID, not the runner ID
+            solde: 10, // Default bet amount
+        });
         selectedRunnerId.value = runnerId;
+        await loadMyBets(); // Reload my bets to update userBetOnRunnerId
         await loadBets();
     } catch (err) {
         console.error('Error placing bet:', err);
-        alert('Failed to place bet. Please try again.');
+        alert(t('race_detail.error_placing_bet'));
     }
 }
 
