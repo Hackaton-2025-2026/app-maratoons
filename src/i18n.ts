@@ -203,9 +203,15 @@ const frMessages = frFromFile || fallbackEnglishMessages;
 // Log which translations are being used (helps debugging on Vercel)
 if (enFromFile && frFromFile) {
   console.log('✅ Loaded translations from JSON files');
+  console.log('Sample EN:', enMessages?.app?.title);
+  console.log('Sample FR:', frMessages?.app?.title);
 } else {
   console.warn('⚠️ Using inline fallback translations');
 }
+
+// Debug: log the actual messages structure
+console.log('EN Messages structure:', Object.keys(enMessages));
+console.log('FR Messages structure:', Object.keys(frMessages));
 
 // Function to get browser language
 function getBrowserLanguage() {
@@ -218,11 +224,11 @@ function getBrowserLanguage() {
 
 const detectedLocale = getBrowserLanguage();
 
-// Create i18n instance with explicit configuration
+// Create i18n instance - using legacy mode for better compatibility
 const i18n = createI18n({
   locale: detectedLocale,
   fallbackLocale: 'en',
-  legacy: false,
+  legacy: true, // Changed to true for better Vercel compatibility
   globalInjection: true,
   messages: {
     en: enMessages,
@@ -231,5 +237,10 @@ const i18n = createI18n({
   missingWarn: false,
   fallbackWarn: false
 });
+
+// Debug log the i18n instance
+console.log('i18n locale:', i18n.global.locale);
+console.log('i18n available locales:', i18n.global.availableLocales);
+console.log('i18n messages keys:', Object.keys(i18n.global.messages));
 
 export default i18n;
