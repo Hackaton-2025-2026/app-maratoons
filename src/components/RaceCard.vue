@@ -1,5 +1,5 @@
 <template>
-    <div class="race-card" :class="{ 'race-card--past': race.status === 'past' }" @click="$emit('click', race.id)">
+    <div class="race-card" :class="{ 'race-card--past': raceStatus === 'past' }" @click="$emit('click', race.id)">
         <div class="race-header">
             <h3>{{ race.name }}</h3>
             <span class="race-status" :class="statusClass">{{ statusLabel }}</span>
@@ -18,7 +18,7 @@
                 <span class="value">{{ race.distance }} {{ $t('race_card.km_suffix') }}</span>
             </div>
         </div>
-        <div v-if="race.status === 'ongoing'" class="live-indicator">
+        <div v-if="raceStatus === 'current'" class="live-indicator">
             <span class="pulse"></span>
             {{ $t('race_card.live_now') }}
         </div>
@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Race } from '../types';
-import { formatDate, getRaceStatusLabel } from '../utils/date';
+import { formatDate, getRaceStatusLabel, getRaceStatus } from '../utils/date';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
@@ -42,8 +42,10 @@ defineEmits<{
 }>();
 
 const formattedDate = computed(() => formatDate(props.race.startDate));
-const statusLabel = computed(() => getRaceStatusLabel(props.race.status, t));
-const statusClass = computed(() => `status-${props.race.status}`);
+const raceStatus = computed(() => getRaceStatus(props.race.startDate));
+const statusLabel = computed(() => getRaceStatusLabel(props.race.startDate, t));
+// Map 'current' to 'ongoing' for CSS class
+const statusClass = computed(() => `status-${raceStatus.value === 'current' ? 'ongoing' : raceStatus.value}`);
 </script>
 
 <style scoped>

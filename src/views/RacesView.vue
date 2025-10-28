@@ -34,7 +34,8 @@ import { useRouter } from 'vue-router';
 import RaceCard from '../components/RaceCard.vue';
 import { raceService } from '../services/api';
 import type { Race } from '../types';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { getRaceStatus } from '../utils/date';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const { t } = useI18n(); // Use useI18n
@@ -53,18 +54,27 @@ const pagination = ref({
 
 const filteredRaces = computed(() => {
     console.log('Active Filter:', activeFilter.value);
-    if (activeFilter.value === 'all') return races.value;
+    let filtered = races.value;
 
-    const filterMap: Record<string, string> = {
-        'live': 'ongoing',
-        'upcoming': 'future',
-        'past': 'past',
-    };
+    // Apply status filter
+    if (activeFilter.value !== 'all') {
+        const filterMap: Record<string, 'current' | 'future' | 'past'> = {
+            'live': 'current',
+            'upcoming': 'future',
+            'past': 'past',
+        };
 
-    return races.value.filter(race => {
-        console.log(`Filtering race ${race.name}: status=${race.status}, filterMap[activeFilter.value]=${filterMap[activeFilter.value]}`);
-        return race.status === filterMap[activeFilter.value];
-    });
+        filtered = races.value.filter(race => {
+            const raceStatus = getRaceStatus(race.startDate);
+            console.log(`Filtering race ${race.name}: computed status=${raceStatus}, filter=${filterMap[activeFilter.value]}`);
+            return raceStatus === filterMap[activeFilter.value];
+        });
+    }
+
+    // Apply client-side pagination
+    const start = (pagination.value.page - 1) * pagination.value.pageSize;
+    const end = start + pagination.value.pageSize;
+    return filtered.slice(start, end);
 });
 
 async function loadRaces() {
@@ -72,10 +82,14 @@ async function loadRaces() {
     error.value = '';
 
     try {
-        const response = await raceService.getRaces(pagination.value.page, pagination.value.pageSize);
-        races.value = response.data;
-        pagination.value.total = response.total;
-        pagination.value.totalPages = response.totalPages;
+        // API 2 returns all races, no pagination on backend
+        const allRaces = await raceService.getRaces();
+        races.value = allRaces;
+
+        // Calculate pagination on client-side
+        pagination.value.total = allRaces.length;
+        pagination.value.totalPages = Math.ceil(allRaces.length / pagination.value.pageSize);
+
         console.log('Loaded races:', races.value);
         console.log('Pagination:', pagination.value);
     } catch (err) {
@@ -88,7 +102,7 @@ async function loadRaces() {
 
 function loadPage(page: number) {
     pagination.value.page = page;
-    loadRaces();
+    // No need to reload races, pagination is client-side
 }
 
 function goToRace(raceId: string) {

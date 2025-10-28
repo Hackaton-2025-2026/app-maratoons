@@ -29,7 +29,8 @@
     "no_bets_yet": "Aucun pari pour l'instant",
     "in_group": "Dans {groupName}",
     "in_groups": "Dans {count} groupes",
-    "error_placing_bet": "Échec du placement du pari. Veuillez réessayer."
+    "error_placing_bet": "Échec du placement du pari. Veuillez réessayer.",
+    "already_bet": "Vous avez déjà placé un pari pour cette course."
   },
   "race_status": {
     "past": "Terminée",
@@ -96,18 +97,25 @@
     "my_groups_title": "Mes Groupes",
     "loading_groups": "Chargement des groupes...",
     "empty_state_message": "Vous n'avez pas encore rejoint de groupes.",
-    "join_a_group_button": "Rejoindre un Groupe",
     "members_count": "{count} membres",
     "points_count": "{count} points",
     "admin_badge": "Admin",
-    "join_another_group_button": "Rejoindre un autre Groupe",
+    "create_group_button": "Créer un Groupe",
+    "join_group_button": "Rejoindre un Groupe",
     "join_group_modal_title": "Rejoindre le Groupe",
     "enter_group_code_placeholder": "Entrez le code du groupe",
+    "create_group_modal_title": "Créer un Groupe",
+    "enter_group_name_placeholder": "Entrez le nom du groupe",
+    "create_button": "Créer",
     "cancel_button": "Annuler",
     "join_button": "Rejoindre",
     "alert_enter_group_code": "Veuillez entrer un code de groupe",
     "alert_joined_group_success": "Groupe rejoint avec succès !",
-    "alert_error_joining_group": "Échec de la jonction du groupe. Veuillez vérifier le code et réessayer."
+    "alert_error_joining_group": "Échec de la jonction du groupe. Veuillez vérifier le code et réessayer.",
+    "alert_enter_group_name": "Veuillez entrer un nom de groupe",
+    "alert_created_group_success": "Groupe créé avec succès !",
+    "alert_error_creating_group": "Échec de la création du groupe. Veuillez réessayer.",
+    "error_loading_groups": "Échec du chargement des groupes. Veuillez réessayer."
   },
   "register_view": {
     "create_account_title": "Créer un Compte",
@@ -150,7 +158,9 @@
   "runner_card": {
     "points_suffix": "pts",
     "selected_button": "Sélectionné",
-    "bet_button": "Parier"
+    "bet_button": "Parier",
+    "bet_placed_button": "Pari Placé",
+    "bet_placed_message": "Pari Placé"
   },
   "race_card": {
     "location_label": "Emplacement :",
@@ -171,5 +181,10 @@
     "page_text": "Page",
     "of_text": "sur",
     "next_button": "Suivant"
+  },
+  "live_ranking": {
+    "title": "Classement en Direct",
+    "last_update": "Dernière mise à jour",
+    "new_leader": "Nouveau Leader"
   }
 }

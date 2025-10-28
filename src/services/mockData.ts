@@ -33,7 +33,6 @@ export const mockRaces: Race[] = [
     location: 'Paris, France',
     startDate: '2024-04-07T09:00:00Z',
     distance: 42.195,
-    status: 'past',
     description: 'The iconic Paris Marathon through the streets of the City of Light'
   },
   {
@@ -42,7 +41,6 @@ export const mockRaces: Race[] = [
     location: 'London, UK',
     startDate: '2024-04-21T10:00:00Z',
     distance: 42.195,
-    status: 'past',
     description: 'One of the six World Marathon Majors'
   },
   {
@@ -51,7 +49,6 @@ export const mockRaces: Race[] = [
     location: 'Boston, USA',
     startDate: '2025-04-21T10:00:00Z',
     distance: 42.195,
-    status: 'ongoing',
     description: 'The world\'s oldest annual marathon, currently in progress!'
   },
   {
@@ -60,7 +57,6 @@ export const mockRaces: Race[] = [
     location: 'Berlin, Germany',
     startDate: '2025-09-28T09:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'Known for its fast, flat course and world records'
   },
   {
@@ -69,7 +65,6 @@ export const mockRaces: Race[] = [
     location: 'Tokyo, Japan',
     startDate: '2025-03-02T09:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'One of the most prestigious marathons in Asia'
   },
   {
@@ -78,7 +73,6 @@ export const mockRaces: Race[] = [
     location: 'New York, USA',
     startDate: '2025-11-02T09:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'The largest marathon in the world by participants'
   },
   {
@@ -87,7 +81,6 @@ export const mockRaces: Race[] = [
     location: 'Chicago, USA',
     startDate: '2025-10-12T08:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'Fast and flat course through Chicago neighborhoods'
   },
   {
@@ -96,7 +89,6 @@ export const mockRaces: Race[] = [
     location: 'Athens, Greece',
     startDate: '2024-11-10T09:00:00Z',
     distance: 42.195,
-    status: 'past',
     description: 'The authentic marathon route from Marathon to Athens'
   },
   {
@@ -105,7 +97,6 @@ export const mockRaces: Race[] = [
     location: 'Dubai, UAE',
     startDate: '2025-01-26T07:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'Known for its generous prize money'
   },
   {
@@ -114,7 +105,6 @@ export const mockRaces: Race[] = [
     location: 'Amsterdam, Netherlands',
     startDate: '2025-10-19T09:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'Fast course through the beautiful Dutch capital'
   },
   {
@@ -123,7 +113,6 @@ export const mockRaces: Race[] = [
     location: 'Stockholm, Sweden',
     startDate: '2025-05-31T14:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'Scandinavia\'s largest running event'
   },
   {
@@ -132,7 +121,6 @@ export const mockRaces: Race[] = [
     location: 'Barcelona, Spain',
     startDate: '2025-03-16T08:30:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'Running along the Mediterranean coast'
   }
 ];
@@ -145,7 +133,6 @@ export const mockRaceDetails: Record<string, RaceDetails> = {
     location: 'Paris, France',
     startDate: '2024-04-07T09:00:00Z',
     distance: 42.195,
-    status: 'past',
     description: 'The iconic Paris Marathon through the streets of the City of Light',
     totalRunners: 98,
     weather: 'Cloudy, 15°C'
@@ -156,7 +143,6 @@ export const mockRaceDetails: Record<string, RaceDetails> = {
     location: 'London, UK',
     startDate: '2024-04-21T10:00:00Z',
     distance: 42.195,
-    status: 'past',
     description: 'One of the six World Marathon Majors',
     totalRunners: 105,
     weather: 'Rainy, 12°C'
@@ -167,7 +153,6 @@ export const mockRaceDetails: Record<string, RaceDetails> = {
     location: 'Boston, USA',
     startDate: '2025-04-21T10:00:00Z',
     distance: 42.195,
-    status: 'ongoing',
     description: 'The world\'s oldest annual marathon, currently in progress!',
     totalRunners: 125,
     weather: 'Sunny, 18°C, Light wind'
@@ -178,7 +163,6 @@ export const mockRaceDetails: Record<string, RaceDetails> = {
     location: 'Berlin, Germany',
     startDate: '2025-09-28T09:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'Known for its fast, flat course and world records',
     totalRunners: 110,
     weather: 'Expected: Clear skies'
@@ -189,7 +173,6 @@ export const mockRaceDetails: Record<string, RaceDetails> = {
     location: 'Tokyo, Japan',
     startDate: '2025-03-02T09:00:00Z',
     distance: 42.195,
-    status: 'future',
     description: 'One of the most prestigious marathons in Asia',
     totalRunners: 95,
     weather: 'Expected: Mild'
@@ -200,7 +183,6 @@ export const mockRaceDetails: Record<string, RaceDetails> = {
     location: 'Athens, Greece',
     startDate: '2024-11-10T09:00:00Z',
     distance: 42.195,
-    status: 'past',
     description: 'The authentic marathon route from Marathon to Athens',
     totalRunners: 88,
     weather: 'Sunny, 20°C'
@@ -334,140 +316,127 @@ export const mockRaceProgress: Record<string, RaceProgress> = {
 };
 
 // Mock Group Members
-export const mockGroupMembers: Record<string, GroupMember[]> = {
+export const mockGroupMembers: Record<string, any[]> = {
   'group-1': [
     {
       id: 'u1',
-      firstName: 'John',
-      lastName: 'Doe',
+      nom: 'John Doe',
       email: 'john.doe@example.com',
       points: 150,
       joinedAt: '2024-01-15T10:00:00Z',
-      isAdmin: true,
+      role: 'admin',
       groupId: 'group-1'
     },
     {
       id: 'u2',
-      firstName: 'Jane',
-      lastName: 'Smith',
+      nom: 'Jane Smith',
       email: 'jane.smith@example.com',
       points: 200,
       joinedAt: '2024-01-16T11:30:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-1'
     },
     {
       id: 'u3',
-      firstName: 'Mike',
-      lastName: 'Johnson',
+      nom: 'Mike Johnson',
       email: 'mike.j@example.com',
       points: 175,
       joinedAt: '2024-01-20T14:15:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-1'
     },
     {
       id: 'u4',
-      firstName: 'Sarah',
-      lastName: 'Williams',
+      nom: 'Sarah Williams',
       email: 'sarah.w@example.com',
       points: 180,
       joinedAt: '2024-02-01T09:00:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-1'
     },
     {
       id: 'u5',
-      firstName: 'David',
-      lastName: 'Brown',
+      nom: 'David Brown',
       email: 'david.brown@example.com',
       points: 125,
       joinedAt: '2024-02-10T16:45:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-1'
     },
     {
       id: 'u6',
-      firstName: 'Emma',
-      lastName: 'Davis',
+      nom: 'Emma Davis',
       email: 'emma.d@example.com',
       points: 165,
       joinedAt: '2024-02-15T12:00:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-1'
     }
   ],
   'group-2': [
     {
       id: 'u1',
-      firstName: 'John',
-      lastName: 'Doe',
+      nom: 'John Doe',
       email: 'john.doe@example.com',
       points: 95,  // Different points - joined later
       joinedAt: '2024-02-10T14:00:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-2'
     },
     {
       id: 'u2',
-      firstName: 'Jane',
-      lastName: 'Smith',
+      nom: 'Jane Smith',
       email: 'jane.smith@example.com',
       points: 145,
       joinedAt: '2024-02-01T14:00:00Z',
-      isAdmin: true,
+      role: 'admin',
       groupId: 'group-2'
     },
     {
       id: 'u4',
-      firstName: 'Sarah',
-      lastName: 'Williams',
+      nom: 'Sarah Williams',
       email: 'sarah.w@example.com',
       points: 120,
       joinedAt: '2024-02-05T10:00:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-2'
     },
     {
       id: 'u7',
-      firstName: 'Robert',
-      lastName: 'Taylor',
+      nom: 'Robert Taylor',
       email: 'robert.t@example.com',
       points: 110,
       joinedAt: '2024-02-12T16:00:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-2'
     }
   ],
   'group-3': [
     {
       id: 'u1',
-      firstName: 'John',
-      lastName: 'Doe',
+      nom: 'John Doe',
       email: 'john.doe@example.com',
       points: 220,  // Higher points - joined early
       joinedAt: '2024-03-10T09:00:00Z',
-      isAdmin: true,
+      role: 'admin',
       groupId: 'group-3'
     },
     {
       id: 'u3',
-      firstName: 'Mike',
-      lastName: 'Johnson',
+      nom: 'Mike Johnson',
       email: 'mike.j@example.com',
       points: 190,
       joinedAt: '2024-03-11T10:00:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-3'
     },
     {
       id: 'u8',
-      firstName: 'Lisa',
-      lastName: 'Anderson',
+      nom: 'Lisa Anderson',
       email: 'lisa.a@example.com',
       points: 185,
       joinedAt: '2024-03-15T12:00:00Z',
-      isAdmin: false,
+      role: 'user',
       groupId: 'group-3'
     }
   ]

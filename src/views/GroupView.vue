@@ -17,16 +17,16 @@
         <template v-else>
             <div class="content-grid">
                 <div class="main-content">
-                    <GroupRankingTable :rankings="rankings" />
+                    <GroupRankingTable :rankings="rankings" class="mb-4" />
 
                     <div class="section">
                         <h2>{{ $t('group_view.members_title') }}</h2>
                         <div class="members-list">
                             <div v-for="member in members" :key="member.id" class="member-item">
-                                <Avatar :firstName="member.firstName" :size="48" />
+                                <Avatar :name="member.nom" :size="48" />
                                 <div class="member-info">
                                     <div class="member-name">
-                                        {{ member.firstName }} {{ member.lastName }}
+                                        {{ member.nom }}
                                         <span v-if="member.isAdmin" class="admin-badge">{{ $t('group_view.admin_badge') }}</span>
                                     </div>
                                     <div class="member-meta">
@@ -122,16 +122,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Avatar from '../components/Avatar.vue';
 import GroupRankingTable from '../components/GroupRankingTable.vue';
 import { groupService } from '../services/api';
 import { authService } from '../services/auth';
+import { socketService } from '../services/socket';
 import { formatDate } from '../utils/date';
-import { mockGroups } from '../services/mockData';
 import type { GroupMember, GroupRanking } from '../types';
-import { useI18n } from 'vue-i18n'; // Import useI18n
+import { useI18n } from 'vue-i18n';
 
 const route = useRoute();
 const router = useRouter();
@@ -141,6 +141,7 @@ const loading = ref(false);
 const error = ref('');
 const members = ref<GroupMember[]>([]);
 const rankings = ref<GroupRanking[]>([]);
+const groupDetails = ref<any>(null);
 const showJoinModal = ref(false);
 const joinCode = ref('');
 const showShareModal = ref(false);
@@ -148,28 +149,17 @@ const shareCode = ref('');
 const copied = ref(false);
 const showEditModal = ref(false);
 const editGroupName = ref('');
-
-// Get current user
 const currentUser = computed(() => authService.getCurrentUser());
-
-// Get group ID from route parameter
 const groupId = computed(() => {
     return route.params.id as string;
-});
-
-// Get group details
-const groupDetails = computed(() => {
-    return mockGroups.find(g => g.id === groupId.value);
 });
 
 // Check if current user is admin in THIS specific group
 const currentUserIsAdmin = computed(() => {
     const user = currentUser.value;
-    if (!user) return false;
+    if (!user || !groupDetails.value) return false;
 
-    // Check if user is admin in this specific group by looking at the members list
-    const member = members.value.find(m => m.id === user.id);
-    return member?.isAdmin || false;
+    return user.id === groupDetails.value.owner_id;
 });
 
 async function loadGroupData() {
@@ -178,19 +168,102 @@ async function loadGroupData() {
 
     try {
         const currentGroupId = groupId.value;
-        const [membersData, rankingsData] = await Promise.all([
-            groupService.getGroupMembers(currentGroupId),
-            groupService.getGroupRanking(currentGroupId),
-        ]);
+        groupDetails.value = await groupService.getGroupById(currentGroupId);
 
-        members.value = membersData;
-        rankings.value = rankingsData;
+        if (!groupDetails.value) {
+            error.value = 'Group not found';
+            loading.value = false;
+            return;
+        }
+
+        const membersData = await groupService.getGroupMembers(currentGroupId);
+        const membersWithUserData = await Promise.all(
+            membersData.map(async (joinRecord: any) => {
+                try {
+                    const userId = joinRecord.user_id;
+                    const response = await fetch(`${import.meta.env.VITE_API_1_URL}api/users/${userId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+                            'ngrok-skip-browser-warning': 'true'
+                        }
+                    });
+                    const userData = await response.json();
+
+                    return {
+                        id: userData._id || userData.id,
+                        nom: userData.nom || 'Unknown User',
+                        email: userData.email || '',
+                        points: userData.solde || 0,
+                        joinedAt: joinRecord.createdAt,
+                        isAdmin: (userData._id || userData.id) === groupDetails.value.owner_id,
+                        groupId: currentGroupId,
+                    };
+                } catch (err) {
+                    console.error('Error fetching user data:', err);
+                    return {
+                        id: joinRecord.user_id,
+                        nom: 'Unknown User',
+                        email: '',
+                        points: 0,
+                        joinedAt: joinRecord.createdAt,
+                        isAdmin: false,
+                        groupId: currentGroupId,
+                    };
+                }
+            })
+        );
+
+        members.value = membersWithUserData;
+        setupRankingWebSocket(currentGroupId);
     } catch (err) {
         error.value = 'Failed to load group data. Please try again.';
         console.error('Error loading group data:', err);
     } finally {
         loading.value = false;
     }
+}
+
+// Store the callback reference for cleanup
+let rankingUpdateCallback: ((rankingData: any[]) => void) | null = null;
+
+// Setup websocket connection for real-time ranking updates
+function setupRankingWebSocket(currentGroupId: string) {
+    if (rankingUpdateCallback) {
+        socketService.unsubscribeFromGroupRank(rankingUpdateCallback);
+    }
+
+    // Connect to socket if not already connected
+    if (!socketService.isSocketConnected()) {
+        socketService.connect();
+    }
+
+    // Define the callback for ranking updates
+    rankingUpdateCallback = (rankingData: any[]) => {
+        console.log('Received ranking update:', rankingData);
+        const unsortedRankings = rankingData.map((user: any) => ({
+            userId: user._id || user.id,
+            userName: user.name || user.nom || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            totalPoints: user.solde || 0,
+            position: 0,
+            groupId: groupId.value,
+        }));
+
+        const sortedRankings = unsortedRankings.sort((a, b) => b.totalPoints - a.totalPoints);
+        rankings.value = sortedRankings.map((ranking, index) => ({
+            ...ranking,
+            position: index + 1,
+        }));
+    };
+    socketService.subscribeToGroupRank(currentGroupId, rankingUpdateCallback);
+}
+
+// Cleanup websocket on component unmount
+function cleanupWebSocket() {
+    if (rankingUpdateCallback) {
+        socketService.unsubscribeFromGroupRank(rankingUpdateCallback);
+        rankingUpdateCallback = null;
+    }
+    socketService.disconnect();
 }
 
 async function handleJoinGroup() {
@@ -200,7 +273,7 @@ async function handleJoinGroup() {
     }
 
     try {
-        await groupService.joinGroup(groupId.value, joinCode.value);
+        await groupService.joinGroup(joinCode.value);
         showJoinModal.value = false;
         joinCode.value = '';
         await loadGroupData();
@@ -211,7 +284,7 @@ async function handleJoinGroup() {
 }
 
 function handleShareGroup() {
-    shareCode.value = `${groupId.value.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    shareCode.value = groupDetails.value?.code || '';
     showShareModal.value = true;
     copied.value = false;
 }
@@ -228,10 +301,7 @@ async function handleSaveGroupEdit() {
     }
 
     try {
-        // In a real app, this would call the API
-        // await groupService.updateGroup(groupId.value, { name: editGroupName.value });
-
-        // Update the local group details (in real app, this would be reloaded from API)
+        await groupService.updateGroup(groupId.value, { name: editGroupName.value });
         if (groupDetails.value) {
             groupDetails.value.name = editGroupName.value;
         }
@@ -253,7 +323,6 @@ async function copyShareCode() {
         }, 2000);
     } catch (err) {
         console.error('Error copying to clipboard:', err);
-        // Fallback for browsers that don't support clipboard API
         alert(`Share code: ${shareCode.value}`);
     }
 }
@@ -269,8 +338,7 @@ async function handleDeleteGroup() {
     }
 
     try {
-        // In a real app, this would call the API
-        // await groupService.deleteGroup(groupId.value);
+        await groupService.deleteGroup(groupId.value);
         alert(t('group_view.group_deleted_success'));
         router.push({ name: 'groups' });
     } catch (err) {
@@ -290,10 +358,8 @@ async function handleResetPoints() {
     }
 
     try {
-        // In a real app, this would call the API
-        // await groupService.resetGroupPoints(groupId.value);
         alert(t('group_view.points_reset_success'));
-        await loadGroupData(); // Reload data to reflect changes
+        await loadGroupData();
     } catch (err) {
         console.error('Error resetting points:', err);
         alert(t('group_view.error_resetting_points'));
@@ -334,6 +400,10 @@ function goBack() {
 
 onMounted(() => {
     loadGroupData();
+});
+
+onUnmounted(() => {
+    cleanupWebSocket();
 });
 </script>
 
@@ -483,6 +553,10 @@ onMounted(() => {
     color: #e74c3c;
 }
 
+.mb-4 {
+    margin-bottom: 24px;
+}
+
 .content-grid {
     display: grid;
     grid-template-columns: 1fr 350px;
@@ -580,8 +654,10 @@ onMounted(() => {
     background: var(--bg-secondary);
     border-radius: 12px;
     padding: 32px;
-    max-width: 400px;
+    max-width: 500px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal h2 {
@@ -599,6 +675,14 @@ onMounted(() => {
     display: flex;
     gap: 12px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+@media (max-width: 480px) {
+    .share-code-container {
+        flex-direction: column;
+    }
 }
 
 .share-code-input {
@@ -624,6 +708,8 @@ onMounted(() => {
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
+    min-width: 100px;
+    flex-shrink: 0;
 }
 
 .copy-button:hover {

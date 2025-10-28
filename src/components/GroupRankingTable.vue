@@ -16,7 +16,7 @@
                     </div>
                 </div>
                 <div class="col-user">
-                    <Avatar :firstName="member.userName" :size="32" />
+                    <Avatar :name="member.userName" :size="32" />
                     <span class="user-name">
                         {{ member.userName }}
                         <span v-if="isCurrentUser(member.userId)" class="you-badge">{{ $t('group_ranking_table.you_badge') }}</span>
@@ -49,10 +49,10 @@ const isCurrentUser = (userId: string) => {
     return currentUser.value?.id === userId;
 };
 
-const getRankClass = (position: number) => {
-    if (position === 1) return 'gold';
-    if (position === 2) return 'silver';
-    if (position === 3) return 'bronze';
+const getRankClass = (rank: number) => {
+    if (rank === 1) return 'gold';
+    if (rank === 2) return 'silver';
+    if (rank === 3) return 'bronze';
     return '';
 };
 </script>

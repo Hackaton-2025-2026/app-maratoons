@@ -1,6 +1,6 @@
 <template>
     <div class="avatar" :style="{ backgroundColor: avatarColor, width: size + 'px', height: size + 'px' }"
-        :title="firstName">
+        :title="name">
         {{ initial }}
     </div>
 </template>
@@ -10,13 +10,13 @@ import { computed } from 'vue';
 import { getInitial, getAvatarColor } from '../utils/avatar';
 
 const props = defineProps<{
-    firstName: string;
+    name: string;
     size?: number;
 }>();
 
 const size = computed(() => props.size || 40);
-const initial = computed(() => getInitial(props.firstName));
-const avatarColor = computed(() => getAvatarColor(props.firstName));
+const initial = computed(() => getInitial(props.name));
+const avatarColor = computed(() => getAvatarColor(props.name));
 </script>
 
 <style scoped>

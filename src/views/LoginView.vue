@@ -43,7 +43,8 @@
                     <p>{{ $t('login_view.dont_have_account') }} <router-link to="/register">{{ $t('login_view.sign_up_link') }}</router-link></p>
                 </div>
 
-                <div class="demo-credentials">
+                <!-- Only show demo credentials in mock mode -->
+                <div v-if="useMock" class="demo-credentials">
                     <p><strong>{{ $t('login_view.demo_accounts_title') }}</strong></p>
                     <p>{{ $t('login_view.demo_admin_credentials') }}</p>
                     <p>{{ $t('login_view.demo_user_credentials') }}</p>
@@ -61,6 +62,9 @@ import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const { t } = useI18n();
+
+// Check if mock mode is enabled
+const useMock = import.meta.env.VITE_USE_MOCK === 'true';
 
 const email = ref('');
 const password = ref('');

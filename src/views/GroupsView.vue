@@ -10,30 +10,40 @@
         <template v-else>
             <div v-if="userGroups.length === 0" class="empty-state">
                 <p>{{ $t('groups_view.empty_state_message') }}</p>
-                <button class="action-button" @click="showJoinModal = true">
-                    {{ $t('groups_view.join_a_group_button') }}
-                </button>
-            </div>
-
-            <div v-else class="groups-grid">
-                <div v-for="group in userGroups" :key="group.id" class="group-card" @click="goToGroup(group.id)">
-                    <div class="group-icon">👥</div>
-                    <div class="group-info">
-                        <h3>{{ group.name }}</h3>
-                        <p v-if="group.description" class="description">{{ group.description }}</p>
-                        <div class="group-meta">
-                            <span>{{ $t('groups_view.members_count', { count: group.memberCount }) }}</span>
-                            <span>{{ $t('groups_view.points_count', { count: getGroupPoints(group.id) }) }}</span>
-                            <span v-if="isGroupAdmin(group.id)" class="admin-badge">{{ $t('groups_view.admin_badge') }}</span>
-                        </div>
-                    </div>
+                <div class="empty-state-actions">
+                    <button class="action-button" @click="showCreateModal = true">
+                        {{ $t('groups_view.create_group_button') }}
+                    </button>
+                    <button class="action-button secondary" @click="showJoinModal = true">
+                        {{ $t('groups_view.join_group_button') }}
+                    </button>
                 </div>
             </div>
 
-            <div class="actions">
-                <button class="action-button secondary" @click="showJoinModal = true">
-                    {{ $t('groups_view.join_another_group_button') }}
-                </button>
+            <div v-else>
+                <div class="groups-grid">
+                    <div v-for="group in userGroups" :key="group.id" class="group-card" @click="goToGroup(group.id)">
+                        <div class="group-icon">👥</div>
+                        <div class="group-info">
+                            <h3>{{ group.name }}</h3>
+                            <p v-if="group.description" class="description">{{ group.description }}</p>
+                            <div class="group-meta">
+                                <span>{{ $t('groups_view.members_count', { count: group.memberCount }) }}</span>
+                                <span>{{ $t('groups_view.points_count', { count: getGroupPoints(group.id) }) }}</span>
+                                <span v-if="isGroupAdmin(group.id)" class="admin-badge">{{ $t('groups_view.admin_badge') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="action-button" @click="showCreateModal = true">
+                        {{ $t('groups_view.create_group_button') }}
+                    </button>
+                    <button class="action-button secondary" @click="showJoinModal = true">
+                        {{ $t('groups_view.join_group_button') }}
+                    </button>
+                </div>
             </div>
         </template>
 
@@ -51,6 +61,21 @@
                 </div>
             </div>
         </div>
+
+        <div v-if="showCreateModal" class="modal-overlay" @click="showCreateModal = false">
+            <div class="modal" @click.stop>
+                <h2>{{ $t('groups_view.create_group_modal_title') }}</h2>
+                <input v-model="newGroupName" type="text" :placeholder="$t('groups_view.enter_group_name_placeholder')" class="input" />
+                <div class="modal-actions">
+                    <button class="action-button secondary" @click="showCreateModal = false">
+                        {{ $t('groups_view.cancel_button') }}
+                    </button>
+                    <button class="action-button" @click="handleCreateGroup">
+                        {{ $t('groups_view.create_button') }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -58,46 +83,91 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../services/auth';
-import { mockGroups, mockGroupMembers } from '../services/mockData';
+import { groupService } from '../services/api';
 import { useI18n } from 'vue-i18n';
+
 const router = useRouter();
 const { t } = useI18n();
 
 const loading = ref(false);
 const error = ref('');
 const showJoinModal = ref(false);
+const showCreateModal = ref(false);
 const joinCode = ref('');
-
-// Get current user
+const newGroupName = ref('');
+const userGroups = ref<any[]>([]);
+const groupMembers = ref<Record<string, any[]>>({});
 const currentUser = computed(() => authService.getCurrentUser());
 
-// Get groups the user belongs to
-const userGroups = computed(() => {
-    const user = currentUser.value;
-    if (!user || !user.groups || user.groups.length === 0) {
-        return [];
+async function loadUserGroups() {
+    loading.value = true;
+    error.value = '';
+
+    try {
+        if (!currentUser.value) {
+            userGroups.value = [];
+            loading.value = false;
+            return;
+        }
+
+        await authService.refreshUserData();
+        const allGroups = await groupService.getAllGroups();
+        const groupsArray = Array.isArray(allGroups) ? allGroups : [];
+        const userGroupsWithMembers = [];
+        for (const group of groupsArray) {
+            const groupId = group._id || group.id;
+            const isOwner = group.owner_id === currentUser.value.id;
+            let members: any[] = [];
+            try {
+                members = await groupService.getGroupMembers(groupId);
+                groupMembers.value[groupId] = members;
+            } catch (err) {
+                console.error(`Error loading members for group ${groupId}:`, err);
+                groupMembers.value[groupId] = [];
+            }
+
+            // Check if user is a member (in JoinGroup collection)
+            const isMember = members.some((member: any) =>
+                (member.user_id?._id || member.user_id) === currentUser.value?.id
+            );
+
+            // Include group if user is owner OR member
+            if (isOwner || isMember) {
+                const memberCount = isOwner && !isMember ? members.length + 1 : members.length;
+                userGroupsWithMembers.push({
+                    ...group,
+                    id: groupId,
+                    memberCount: memberCount,
+                });
+            }
+        }
+
+        userGroups.value = userGroupsWithMembers;
+    } catch (err: any) {
+        console.error('Error loading groups:', err);
+        error.value = err.message || t('groups_view.error_loading_groups');
+    } finally {
+        loading.value = false;
     }
-    return mockGroups.filter(group => user.groups?.includes(group.id));
-});
-
-// Get user's points in a specific group
-function getGroupPoints(groupId: string): number {
-    const user = currentUser.value;
-    if (!user) return 0;
-
-    const members = mockGroupMembers[groupId] || [];
-    const member = members.find(m => m.id === user.id);
-    return member?.points || 0;
 }
 
-// Check if user is admin in a specific group
-function isGroupAdmin(groupId: string): boolean {
-    const user = currentUser.value;
-    if (!user) return false;
+// Get user's points in a specific group
+// Since we don't have the full user data in groupMembers (only JoinGroup records),
+// we return the current user's total points (solde) from their profile
+function getGroupPoints(_groupId: string): number {
+    if (!currentUser.value) return 0;
+    return currentUser.value.solde || currentUser.value.points || 0;
+}
 
-    const members = mockGroupMembers[groupId] || [];
-    const member = members.find(m => m.id === user.id);
-    return member?.isAdmin || false;
+// Check if user is admin (owner) in a specific group
+function isGroupAdmin(groupId: string): boolean {
+    if (!currentUser.value) return false;
+    const group = userGroups.value.find((g: any) => (g._id || g.id) === groupId);
+    if (group && group.owner_id === currentUser.value.id) {
+        return true;
+    }
+
+    return false;
 }
 
 function goToGroup(groupId: string) {
@@ -111,24 +181,36 @@ async function handleJoinGroup() {
     }
 
     try {
-        // In a real app, this would call the API
-        // await groupService.joinGroup(joinCode.value);
+        await groupService.joinGroup(joinCode.value);
         showJoinModal.value = false;
         joinCode.value = '';
         alert(t('groups_view.alert_joined_group_success'));
-        // Reload user data to get updated groups list
-    } catch (err) {
+        await loadUserGroups();
+    } catch (err: any) {
         console.error('Error joining group:', err);
         alert(t('groups_view.alert_error_joining_group'));
     }
 }
 
+async function handleCreateGroup() {
+    if (!newGroupName.value.trim()) {
+        alert(t('groups_view.alert_enter_group_name'));
+        return;
+    }
+    try {
+        await groupService.createGroup(newGroupName.value);
+        showCreateModal.value = false;
+        newGroupName.value = '';
+        alert(t('groups_view.alert_created_group_success'));
+        await loadUserGroups();
+    } catch (err: any) {
+        console.error('Error creating group:', err);
+        alert(t('groups_view.alert_error_creating_group'));
+    }
+}
+
 onMounted(() => {
-    loading.value = true;
-    // Simulate loading
-    setTimeout(() => {
-        loading.value = false;
-    }, 300);
+    loadUserGroups();
 });
 </script>
 
@@ -250,7 +332,14 @@ onMounted(() => {
 .actions {
     display: flex;
     justify-content: center;
+    gap: 12px;
     padding: 20px 0;
+}
+
+.empty-state-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
 }
 
 .action-button {
