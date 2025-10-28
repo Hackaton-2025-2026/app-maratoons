@@ -123,7 +123,15 @@ async function handleLogin() {
         router.push('/');
     } catch (err: any) {
         console.error('Login error:', err);
-        error.value = err.response?.data?.error || $t('error_login_failed');
+        // Better error message handling
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message;
+        error.value = errorMessage || $t('error_login_failed');
+
+        // Log detailed error for debugging
+        if (err.response) {
+            console.error('Response data:', err.response.data);
+            console.error('Response status:', err.response.status);
+        }
     } finally {
         loading.value = false;
     }
