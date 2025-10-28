@@ -1,11 +1,11 @@
 <template>
     <div class="race-detail-view">
-        <div v-if="loading" class="loading">{{ $t('race_detail.loading_details') }}</div>
-        <div v-else-if="error" class="error">{{ $t('race_detail.error_loading_details') }}</div>
+        <div v-if="loading" class="loading">{{ $t('loading_details') }}</div>
+        <div v-else-if="error" class="error">{{ $t('error_loading_details') }}</div>
 
         <template v-else-if="raceDetails">
             <div class="back-button" @click="goBack">
-                {{ $t('race_detail.back_to_races') }}
+                {{ $t('back_to_races') }}
             </div>
 
             <div class="race-header">
@@ -39,8 +39,8 @@
                         @runnerClick="handleRunnerClick" />
 
                     <div class="section">
-                        <h2>{{ raceStatus === 'future' ? $t('race_detail.place_your_bet') : $t('race_detail.runners') }}</h2>
-                        <div v-if="loadingRunners" class="loading">{{ $t('race_detail.loading_runners') }}</div>
+                        <h2>{{ raceStatus === 'future' ? $t('place_your_bet') : $t('runners') }}</h2>
+                        <div v-if="loadingRunners" class="loading">{{ $t('loading_runners') }}</div>
                         <div v-else class="runners-list">
                             <template v-for="runner in paginatedRunners" :key="runner.id">
                                 <RunnerCard :runner="runner"
@@ -53,12 +53,12 @@
                         <div v-if="runnersPagination.totalPages > 1" class="pagination">
                             <button :disabled="runnersPagination.page === 1"
                                 @click="loadRunnersPage(runnersPagination.page - 1)">
-                                {{ $t('race_detail.previous') }}
+                                {{ $t('previous') }}
                             </button>
-                            <span>{{ $t('race_detail.page') }} {{ runnersPagination.page }} {{ $t('race_detail.of') }} {{ runnersPagination.totalPages }}</span>
+                            <span>{{ $t('page') }} {{ runnersPagination.page }} {{ $t('of') }} {{ runnersPagination.totalPages }}</span>
                             <button :disabled="runnersPagination.page === runnersPagination.totalPages"
                                 @click="loadRunnersPage(runnersPagination.page + 1)">
-                                {{ $t('race_detail.next') }}
+                                {{ $t('next') }}
                             </button>
                         </div>
                     </div>
@@ -66,10 +66,10 @@
 
                 <div class="sidebar">
                     <div class="section">
-                        <h3>{{ $t('race_detail.friends_bets') }}</h3>
-                        <div v-if="loadingBets" class="loading-small">{{ $t('race_detail.loading') }}</div>
+                        <h3>{{ $t('friends_bets') }}</h3>
+                        <div v-if="loadingBets" class="loading-small">{{ $t('loading') }}</div>
                         <div v-else-if="bets.length === 0" class="empty-state">
-                            {{ $t('race_detail.no_bets_yet') }}
+                            {{ $t('no_bets_yet') }}
                         </div>
                         <div v-else class="bets-list">
                             <div v-for="bet in bets" :key="bet.userId" class="bet-item"
@@ -87,8 +87,8 @@
 
                                     </div>
                                     <div class="group-info">
-                                        <span v-if="bet.groups.length === 1">{{ $t('race_detail.in_group', { groupName: bet.groups[0].name }) }}</span>
-                                        <span v-else>{{ $t('race_detail.in_groups', { count: bet.groups.length }) }}</span>
+                                        <span v-if="bet.groups.length === 1">{{ $t('in_group', { groupName: bet.groups[0].name }) }}</span>
+                                        <span v-else>{{ $t('in_groups', { count: bet.groups.length }) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -116,6 +116,54 @@ import { useI18n } from 'vue-i18n';
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
+
+// Inline fallback translations
+const fallback = {
+    loading_details: "Loading race details...",
+    error_loading_details: "Failed to load race details. Please try again.",
+    back_to_races: "← Back to Races",
+    place_your_bet: "Place Your Bet",
+    runners: "Runners",
+    loading_runners: "Loading runners...",
+    previous: "Previous",
+    page: "Page",
+    of: "of",
+    next: "Next",
+    friends_bets: "Friends' Bets",
+    loading: "Loading...",
+    no_bets_yet: "No bets yet",
+    in_group: "In {groupName}",
+    in_groups: "In {count} groups",
+    error_placing_bet: "Failed to place bet. Please try again.",
+    already_bet: "You have already placed a bet for this race."
+};
+
+// Safe translation function
+const $t = (key: string, values?: any) => {
+    try {
+        const translated = t(key, values);
+        if (translated === key || translated.includes('race_detail.')) {
+            const shortKey = key.replace('race_detail.', '');
+            let fallbackText = fallback[shortKey as keyof typeof fallback] || key;
+            if (values && typeof fallbackText === 'string') {
+                Object.keys(values).forEach(k => {
+                    fallbackText = (fallbackText as string).replace(`{${k}}`, String(values[k]));
+                });
+            }
+            return fallbackText;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('race_detail.', '');
+        let fallbackText = fallback[shortKey as keyof typeof fallback] || key;
+        if (values && typeof fallbackText === 'string') {
+            Object.keys(values).forEach(k => {
+                fallbackText = (fallbackText as string).replace(`{${k}}`, String(values[k]));
+            });
+        }
+        return fallbackText;
+    }
+};
 
 const loading = ref(false);
 const loadingRunners = ref(false);
@@ -418,7 +466,7 @@ async function handleBet(runnerId: string) {
 
     // Prevent betting if a bet is already placed
     if (userBetOnRunnerId.value) {
-        alert(t('race_detail.already_bet'));
+        alert($t('already_bet'));
         return;
     }
 
@@ -442,7 +490,7 @@ async function handleBet(runnerId: string) {
         await loadBets();
     } catch (err) {
         console.error('Error placing bet:', err);
-        alert(t('race_detail.error_placing_bet'));
+        alert($t('error_placing_bet'));
     }
 }
 

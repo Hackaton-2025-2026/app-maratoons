@@ -2,8 +2,8 @@
     <div class="auth-view">
         <div class="auth-container">
             <div class="auth-card">
-                <h1>{{ $t('register_view.create_account_title') }}</h1>
-                <p class="subtitle">{{ $t('register_view.subtitle') }}</p>
+                <h1>{{ $t('create_account_title') }}</h1>
+                <p class="subtitle">{{ $t('subtitle') }}</p>
 
                 <form @submit.prevent="handleRegister" class="auth-form">
                     <div v-if="error" class="error-message">
@@ -11,62 +11,62 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="name">{{ $t('register_view.full_name_label') }}</label>
+                        <label for="name">{{ $t('full_name_label') }}</label>
                         <input
                             id="name"
                             v-model="name"
                             type="text"
-                            :placeholder="$t('register_view.full_name_placeholder')"
+                            :placeholder="$t('full_name_placeholder')"
                             required
                             autocomplete="name"
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="email">{{ $t('register_view.email_label') }}</label>
+                        <label for="email">{{ $t('email_label') }}</label>
                         <input
                             id="email"
                             v-model="email"
                             type="email"
-                            :placeholder="$t('register_view.email_placeholder')"
+                            :placeholder="$t('email_placeholder')"
                             required
                             autocomplete="email"
                         />
                     </div>
 
                     <div class="form-group">
-                        <label for="password">{{ $t('register_view.password_label') }}</label>
+                        <label for="password">{{ $t('password_label') }}</label>
                         <input
                             id="password"
                             v-model="password"
                             type="password"
-                            :placeholder="$t('register_view.create_password_placeholder')"
+                            :placeholder="$t('create_password_placeholder')"
                             required
                             autocomplete="new-password"
                             minlength="6"
                         />
-                        <span class="hint">{{ $t('register_view.password_hint') }}</span>
+                        <span class="hint">{{ $t('password_hint') }}</span>
                     </div>
 
                     <div class="form-group">
-                        <label for="confirmPassword">{{ $t('register_view.confirm_password_label') }}</label>
+                        <label for="confirmPassword">{{ $t('confirm_password_label') }}</label>
                         <input
                             id="confirmPassword"
                             v-model="confirmPassword"
                             type="password"
-                            :placeholder="$t('register_view.confirm_password_placeholder')"
+                            :placeholder="$t('confirm_password_placeholder')"
                             required
                             autocomplete="new-password"
                         />
                     </div>
 
                     <button type="submit" class="btn-primary" :disabled="loading">
-                        {{ loading ? $t('register_view.creating_account_button') : $t('register_view.create_account_button') }}
+                        {{ loading ? $t('creating_account_button') : $t('create_account_button') }}
                     </button>
                 </form>
 
                 <div class="auth-footer">
-                    <p>{{ $t('register_view.already_have_account') }} <router-link to="/login">{{ $t('register_view.sign_in_link') }}</router-link></p>
+                    <p>{{ $t('already_have_account') }} <router-link to="/login">{{ $t('sign_in_link') }}</router-link></p>
                 </div>
             </div>
         </div>
@@ -82,6 +82,44 @@ import { useI18n } from 'vue-i18n';
 const router = useRouter();
 const { t } = useI18n();
 
+// Inline fallback translations
+const fallback = {
+    create_account_title: "Create Account",
+    subtitle: "Join Marathoons to start betting with friends",
+    full_name_label: "Full Name",
+    full_name_placeholder: "Enter your full name",
+    email_label: "Email",
+    email_placeholder: "Enter your email",
+    password_label: "Password",
+    create_password_placeholder: "Create a password",
+    password_hint: "Minimum 6 characters",
+    confirm_password_label: "Confirm Password",
+    confirm_password_placeholder: "Confirm your password",
+    creating_account_button: "Creating account...",
+    create_account_button: "Create Account",
+    already_have_account: "Already have an account?",
+    sign_in_link: "Sign in",
+    error_fill_all_fields: "Please fill in all fields",
+    error_password_length: "Password must be at least 6 characters",
+    error_passwords_match: "Passwords do not match",
+    error_registration_failed: "Registration failed. Please try again."
+};
+
+// Safe translation function
+const $t = (key: string) => {
+    try {
+        const translated = t(key);
+        if (translated === key || translated.includes('register_view.')) {
+            const shortKey = key.replace('register_view.', '');
+            return fallback[shortKey as keyof typeof fallback] || key;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('register_view.', '');
+        return fallback[shortKey as keyof typeof fallback] || key;
+    }
+};
+
 const name = ref('');
 const email = ref('');
 const password = ref('');
@@ -94,17 +132,17 @@ async function handleRegister() {
 
     // Validation
     if (!name.value || !email.value || !password.value || !confirmPassword.value) {
-        error.value = t('register_view.error_fill_all_fields');
+        error.value = $t('error_fill_all_fields');
         return;
     }
 
     if (password.value.length < 6) {
-        error.value = t('register_view.error_password_length');
+        error.value = $t('error_password_length');
         return;
     }
 
     if (password.value !== confirmPassword.value) {
-        error.value = t('register_view.error_passwords_match');
+        error.value = $t('error_passwords_match');
         return;
     }
 
@@ -121,7 +159,7 @@ async function handleRegister() {
         router.push('/');
     } catch (err: any) {
         console.error('Registration error:', err);
-        error.value = err.response?.data?.error || t('register_view.error_registration_failed');
+        error.value = err.response?.data?.error || $t('error_registration_failed');
     } finally {
         loading.value = false;
     }

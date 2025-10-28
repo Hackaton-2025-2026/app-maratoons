@@ -89,6 +89,60 @@ import { useI18n } from 'vue-i18n';
 const router = useRouter();
 const { t } = useI18n();
 
+// Inline fallback translations
+const fallback = {
+    my_groups_title: "My Groups",
+    loading_groups: "Loading groups...",
+    empty_state_message: "You haven't joined any groups yet.",
+    members_count: "{count} members",
+    points_count: "{count} points",
+    admin_badge: "Admin",
+    create_group_button: "Create Group",
+    join_group_button: "Join Group",
+    join_group_modal_title: "Join Group",
+    enter_group_code_placeholder: "Enter group code",
+    create_group_modal_title: "Create Group",
+    enter_group_name_placeholder: "Enter group name",
+    create_button: "Create",
+    cancel_button: "Cancel",
+    join_button: "Join",
+    alert_enter_group_code: "Please enter a group code",
+    alert_joined_group_success: "Successfully joined the group!",
+    alert_error_joining_group: "Failed to join group. Please check the code and try again.",
+    alert_enter_group_name: "Please enter a group name",
+    alert_created_group_success: "Group created successfully!",
+    alert_error_creating_group: "Failed to create group. Please try again.",
+    error_loading_groups: "Failed to load groups. Please try again."
+};
+
+// Safe translation function
+const $t = (key: string, values?: any) => {
+    try {
+        const translated = t(key, values);
+        if (translated === key || translated.includes('groups_view.')) {
+            const shortKey = key.replace('groups_view.', '');
+            let fallbackText = fallback[shortKey as keyof typeof fallback] || key;
+            // Replace placeholders
+            if (values && typeof fallbackText === 'string') {
+                Object.keys(values).forEach(k => {
+                    fallbackText = (fallbackText as string).replace(`{${k}}`, String(values[k]));
+                });
+            }
+            return fallbackText;
+        }
+        return translated;
+    } catch {
+        const shortKey = key.replace('groups_view.', '');
+        let fallbackText = fallback[shortKey as keyof typeof fallback] || key;
+        if (values && typeof fallbackText === 'string') {
+            Object.keys(values).forEach(k => {
+                fallbackText = (fallbackText as string).replace(`{${k}}`, String(values[k]));
+            });
+        }
+        return fallbackText;
+    }
+};
+
 const loading = ref(false);
 const error = ref('');
 const showJoinModal = ref(false);
@@ -176,7 +230,7 @@ function goToGroup(groupId: string) {
 
 async function handleJoinGroup() {
     if (!joinCode.value.trim()) {
-        alert(t('groups_view.alert_enter_group_code'));
+        alert($t('alert_enter_group_code'));
         return;
     }
 
@@ -184,28 +238,28 @@ async function handleJoinGroup() {
         await groupService.joinGroup(joinCode.value);
         showJoinModal.value = false;
         joinCode.value = '';
-        alert(t('groups_view.alert_joined_group_success'));
+        alert($t('alert_joined_group_success'));
         await loadUserGroups();
     } catch (err: any) {
         console.error('Error joining group:', err);
-        alert(t('groups_view.alert_error_joining_group'));
+        alert($t('alert_error_joining_group'));
     }
 }
 
 async function handleCreateGroup() {
     if (!newGroupName.value.trim()) {
-        alert(t('groups_view.alert_enter_group_name'));
+        alert($t('alert_enter_group_name'));
         return;
     }
     try {
         await groupService.createGroup(newGroupName.value);
         showCreateModal.value = false;
         newGroupName.value = '';
-        alert(t('groups_view.alert_created_group_success'));
+        alert($t('alert_created_group_success'));
         await loadUserGroups();
     } catch (err: any) {
         console.error('Error creating group:', err);
-        alert(t('groups_view.alert_error_creating_group'));
+        alert($t('alert_error_creating_group'));
     }
 }
 
